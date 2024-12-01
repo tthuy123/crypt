@@ -181,9 +181,9 @@ const ElGamal = () => {
         <Stack spacing={2}>
           <TextField
             label="p (Prime Number)"
-            type="number"
+            type="text"
             value={p}
-            onChange={(e) => setP(e.target.value === "" ? "" : Number(e.target.value))}
+            onChange={(e) => setP(e.target.value)}
             helperText="Enter a large prime number for security."
           />
           <Stack direction="row" spacing={2} alignItems="center">
