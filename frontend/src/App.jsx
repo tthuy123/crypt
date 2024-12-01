@@ -1,23 +1,37 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
+import Layout from "./components/Layout.jsx"; // Import Layout component
 import ECC from "./pages/ECC.jsx";
-import RSA from './pages/RSA.jsx';  // Import RSA component from file RSA.jsx
+import RSA from './pages/RSA.jsx';  
 import ElGamal from './pages/Elgamal.jsx';
 import Homepage from './pages/Homepage.jsx';
 import Factors from './pages/Factors.jsx';
 
+import { createTheme, ThemeProvider } from "@mui/material";
+
+const theme = createTheme({
+  typography: {
+    fontFamily: ["Poppins", "Neue Helvetica Condensed BQ", "san-serif"].join(
+      ","
+    ),
+  },
+});
+
 const App = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Homepage />} />
-        <Route path="/elgamal" element={<ElGamal />} />
-        <Route path="/rsa" element={<RSA />} />
-        <Route path="/ecc" element={<ECC />} />
-        <Route path="/factors" element={<Factors />} />
-      </Routes>
-    </BrowserRouter>
+    <ThemeProvider theme={theme}>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route index element={<Homepage />} />
+            <Route path="/elgamal" element={<ElGamal />} />
+            <Route path="/rsa" element={<RSA />} />
+            <Route path="/ecc" element={<ECC />} />
+            <Route path="/factors" element={<Factors />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 };
 
