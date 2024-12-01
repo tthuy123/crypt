@@ -36,9 +36,9 @@ def key_generate():
     if 'p' not in data or 'alpha' not in data or 'a' not in data:
         return jsonify({"error": "Missing required parameters: p, alpha, a"}), 400
 
-    p = data['p']
-    alpha = data['alpha']
-    a = data['a']
+    p = int(data['p'])
+    alpha = int(data['alpha'])
+    a = int(data['a'])
 
     try:
         private_key, public_key = key_generate_elgamal(p, alpha, a)
