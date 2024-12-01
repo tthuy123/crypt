@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.services.math_utils import modular_pow, modular_inverse, is_prime
+from app.services.text import encrypt_single, encrypt_string, decrypt, decrypt_string
+
 
 bp = Blueprint('common', __name__, url_prefix='/api/common')
 
@@ -53,3 +55,62 @@ def check_prime():
 
     except ValueError:
         return jsonify({"error": "Invalid input. 'n' must be an integer"}), 400
+    
+@bp.route('/encrypt', methods=['POST'])
+def encrypt():
+    # Lấy dữ liệu từ request body
+    data = request.get_json()
+    if not data or 'text' not in data:
+        return jsonify({"error": "Missing 'text' field in request body"}), 400
+    
+    text = data['text']
+    try:
+        encrypted_value = encrypt_single(text)
+        return jsonify({"encrypted_value": encrypted_value}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@bp.route('/encrypt-string', methods=['POST'])
+def encrypt_string():
+    data = request.get_json()
+    if not data or 'text' not in data or 'n' not in data:
+        return jsonify({"error": "Missing 'text' or 'n' field in request body"}), 400
+    
+    text = data['text']
+    n = data['n']
+    try:
+        encrypted_values = encrypt_string(text, n)
+        return jsonify({"encrypted_values": encrypted_values}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@bp.route('/decrypt', methods=['POST'])
+def decrypt_route():
+    # Lấy dữ liệu từ request body
+    data = request.get_json()
+    if not data or 'number' not in data:
+        return jsonify({"error": "Missing 'number' field in request body"}), 400
+    
+    try:
+        # Đảm bảo 'number' là số nguyên
+        number = int(data['number'])
+        print(number)
+        result = decrypt(number)
+        return jsonify({"decrypted_value": result}), 200
+    except ValueError:
+        return jsonify({"error": "'number' must be an integer"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@bp.route('/decrypt-string', methods=['POST'])
+def decrypt_string():
+    data = request.get_json()
+    if not data or 'encrypted_values' not in data:
+        return jsonify({"error": "Missing 'encrypted_values' field in request body"}), 400
+    
+    encrypted_values = data['encrypted_values']
+    try:
+        decrypted_text = decrypt_string(encrypted_values)
+        return jsonify({"decrypted_text": decrypted_text}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
