@@ -32,7 +32,29 @@ const Common = {
                 return error.response;
             }
         }
-    }
+    },
+
+    async encrypt(data) {
+        try {
+            const response = await Client.post("common/encrypt", data); // gọi API encrypt
+            return response;
+        } catch (error) {
+            if (error.response) {
+                return error.response;
+            }
+        }
+    },
+
+    async decrypt(data) {
+        try {
+            const response = await Client.post("common/decrypt", data); // gọi API decrypt
+            return response;
+        } catch (error) {
+            if (error.response) {
+                return error.response;
+            }
+        }
+    },
 }
 
 export default Common;
