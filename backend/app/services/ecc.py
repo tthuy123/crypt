@@ -224,35 +224,65 @@ def ecdsa_generate_keypair(P, n, d, curve):
     Q = scalar_multiply(d, P, curve)
     return (P, n, d, curve), (P, Q, n, curve)
 
-def ecdsa_sign(message, private_key, curve):
-    """
-    Sign a message using ECDSA
-    Args:
-        message: Message to sign
-        private_key: A tuple of private key parameters
-        curve: Curve parameters (a, b, p)
-    Returns:
-        A tuple of signature (r, s)
-    """
+def is_valid_k(k, message, private_key, curve):
     P, n, d, _ = private_key
-    h = hash_message(message)
-    k = random.randint(1, n - 1)
+    kG = scalar_multiply(k, P, curve)
 
-    kP = scalar_multiply(k, P, curve)
-    while kP[0] % n == 0:
-        k = random.randint(1, n - 1)
-        kP = scalar_multiply(k, P, curve)
-    r = kP[0] % n
+    x1, _ = kG
+
+    r = x1 % n
+    if r == 0:
+        return False
+
+    h = hash_message(message)
     s = (multiplicative_inverse(n, k) * (h + r * d)) % n
-    while s % n == 0:
-        k = random.randint(1, n - 1)
-        kP = scalar_multiply(k, P, curve)
-        while kP[0] % n == 0:
-            k = random.randint(1, n - 1)
-            kP = scalar_multiply(k, P, curve)
-        r = kP[0] % n
-        s = (multiplicative_inverse(n, k) * (h + r * d)) % n
+
+    if s == 0:
+        return False
+    
+    return True
+    
+def ecdsa_sign(message, k, private_key, curve):
+    P, n, d, _ = private_key
+    kG = scalar_multiply(k, P, curve)
+
+    x1, _ = kG
+
+    r = x1 % n
+    h = hash_message(message)
+    s = (multiplicative_inverse(n, k) * (h + r * d)) % n
+
     return r, s
+
+# def ecdsa_sign(message, private_key, curve):
+#     """
+#     Sign a message using ECDSA
+#     Args:
+#         message: Message to sign
+#         private_key: A tuple of private key parameters
+#         curve: Curve parameters (a, b, p)
+#     Returns:
+#         A tuple of signature (r, s)
+#     """
+#     P, n, d, _ = private_key
+#     h = hash_message(message)
+#     k = random.randint(1, n - 1)
+
+#     kP = scalar_multiply(k, P, curve)
+#     while kP[0] % n == 0:
+#         k = random.randint(1, n - 1)
+#         kP = scalar_multiply(k, P, curve)
+#     r = kP[0] % n
+#     s = (multiplicative_inverse(n, k) * (h + r * d)) % n
+#     while s % n == 0:
+#         k = random.randint(1, n - 1)
+#         kP = scalar_multiply(k, P, curve)
+#         while kP[0] % n == 0:
+#             k = random.randint(1, n - 1)
+#             kP = scalar_multiply(k, P, curve)
+#         r = kP[0] % n
+#         s = (multiplicative_inverse(n, k) * (h + r * d)) % n
+#     return r, s
     
 def ecdsa_verify(message, signature, public_key):
     """
@@ -277,4 +307,3 @@ def ecdsa_verify(message, signature, public_key):
     add_u1P_u2Q = point_add(u1P, u2Q, curve)
     v = add_u1P_u2Q[0] % n
     return v == r
-
