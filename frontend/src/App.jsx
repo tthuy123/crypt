@@ -8,6 +8,7 @@ import Homepage from './pages/Homepage.jsx';
 import Factors from './pages/Factors.jsx';
 
 import { createTheme, ThemeProvider } from "@mui/material";
+import RSA_Signature from "./pages/RSA_Signature.jsx";
 
 const theme = createTheme({
   typography: {
@@ -26,6 +27,7 @@ const App = () => {
             <Route index element={<Homepage />} />
             <Route path="/elgamal" element={<ElGamal />} />
             <Route path="/rsa" element={<RSA />} />
+            <Route path="/rsa-signature" element={<RSA_Signature />} />
             <Route path="/ecc" element={<ECC />} />
             <Route path="/factors" element={<Factors />} />
           </Route>

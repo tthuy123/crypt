@@ -1,10 +1,55 @@
 from flask import Blueprint, request, jsonify
 from app.services.math_utils import modular_pow, modular_inverse, is_prime
 from app.services.text import encrypt_single, encrypt_string, decrypt, decrypt_string
-
+from math import gcd
 
 bp = Blueprint('common', __name__, url_prefix='/api/common')
 
+@bp.route('/sum', methods=['POST'])
+def calculate_sum():
+    data = request.json
+    if 'a' not in data or 'b' not in data:
+        return jsonify({"error": "Missing 'a' or 'b' parameter"}), 400
+
+    try:
+        a = int(data['a'])
+        b = int (data['b'])
+        result = str(a + b)
+        return jsonify({"a": a, "b": b, "result": result})
+
+    except ValueError:
+        return jsonify({"error": "Invalid input. 'a', 'b'"}), 400
+
+@bp.route('/gcd', methods=['POST'])
+def calculate_gcd():
+    data = request.json
+    if 'a' not in data or 'b' not in data:
+        return jsonify({"error": "Missing 'a' or 'b' parameter"}), 400
+
+    try:
+        a = int(data['a'])
+        b = int (data['b'])
+        result = str(gcd(a, b))
+        return jsonify({"a": a, "b": b, "result": result})
+
+    except ValueError:
+        return jsonify({"error": "Invalid input. 'a', 'b'"}), 400
+@bp.route('/product', methods=['POST'])
+
+def calculate_product():
+    data = request.json
+    if 'a' not in data or 'b' not in data:
+        return jsonify({"error": "Missing 'a' or 'b' parameter"}), 400
+
+    try:
+        a = int(data['a'])
+        b = int (data['b'])
+        result = str(a * b)
+        return jsonify({"a": a, "b": b, "result": result})
+
+    except ValueError:
+        return jsonify({"error": "Invalid input. 'a', 'b'"}), 400
+    
 @bp.route('/pow', methods=['POST'])
 def calculate_pow():
     data = request.json
@@ -16,7 +61,7 @@ def calculate_pow():
         exponent = int(data['exponent'])
         modulus = int(data['modulus'])
 
-        result = modular_pow(base, exponent, modulus)
+        result = str(modular_pow(base, exponent, modulus))
         return jsonify({"base": base, "exponent": exponent, "modulus": modulus, "result": result})
 
     except ValueError:
@@ -32,7 +77,7 @@ def calculate_inverse():
         a = int(data['a'])
         b = int(data['b'])
 
-        result = modular_inverse(a, b)
+        result = str(modular_inverse(a, b))
         if result is None:
             return jsonify({"error": f"No modular inverse for {a} and {b} (GCD != 1)"}), 400
         else:
@@ -49,9 +94,8 @@ def check_prime():
 
     try:
         n = int(data['n'])
-
         result = is_prime(n)
-        return jsonify({"n": n, "is_prime": result})
+        return jsonify({"n": str(n), "is_prime": result})
 
     except ValueError:
         return jsonify({"error": "Invalid input. 'n' must be an integer"}), 400
@@ -66,7 +110,7 @@ def encrypt():
     text = data['text']
     try:
         encrypted_value = encrypt_single(text)
-        return jsonify({"encrypted_value": encrypted_value}), 200
+        return jsonify({"encrypted_value": str(encrypted_value)}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
@@ -111,6 +155,6 @@ def decrypt_string():
     encrypted_values = data['encrypted_values']
     try:
         decrypted_text = decrypt_string(encrypted_values)
-        return jsonify({"decrypted_text": decrypted_text}), 200
+        return jsonify({"decrypted_text": str(decrypted_text)}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

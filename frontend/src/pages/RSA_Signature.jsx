@@ -8,7 +8,7 @@ import {
 import CommonAPI from "../api/modules/common.api";
 import { Box, Typography, TextField, Button } from "@mui/material";
 
-const RSA = () => {
+const RSA_Signature = () => {
   const [qIsPrime, setqIsPrime] = useState(true);
   const [pIsPrime, setpIsPrime] = useState(true);
   const [pIsNaN, setpIsNaN] = useState(false);
@@ -217,30 +217,31 @@ const RSA = () => {
 
   useEffect(() => {
     if (message_code !== "" && n && e) {
-      const eVal = e;
+      const dVal = d;
       const nVal = n;
       const value = message_code;
       const calculate = async () => {
-        const encrypt = await handleModular_exponentiation(value, eVal, nVal);
+        const encrypt = await handleModular_exponentiation(value, dVal, nVal);
         setEncryptNum(encrypt.result);
         setEncryptNum2(encrypt.result);
       };
       calculate();
     } else {
       setEncryptNum("");
+      setEncryptNum2("")
     }
-  }, [message_code, n, e]);
+  }, [message_code, n, d]);
 
   // Decrypt the message whenever encryptedMessage changes
   useEffect(() => {
     if (encryptNum2 !== null && n && d !== null) {
       const nVal = n;
-      const dVal = d;
+      const eVal = e;
       const value = encryptNum2;
       const calculate = async () => {
         const decryptNum = await handleModular_exponentiation(
           value,
-          dVal,
+          eVal,
           nVal
         );
         const decryptMess = await handleDecrypt(decryptNum.result);
@@ -249,7 +250,7 @@ const RSA = () => {
       };
       calculate();
     }
-  }, [encryptNum2, n, d]);
+  }, [encryptNum2, n, e]);
 
   return (
     <Box sx={{ padding: 5 }}>
@@ -267,7 +268,7 @@ const RSA = () => {
             position: "relative",
           }}
         >
-          RSA Encryption/Decryption
+          RSA Signature
         </Typography>
       </Box>
 
@@ -497,17 +498,10 @@ const RSA = () => {
       </Box>
       <Box sx={{ marginBottom: 2 }}>
         <Typography fontSize={"35px"} fontWeight={"Bold"} marginTop={4}>
-          Step 3: Encrypt
-        </Typography>
-        <Typography sx={{ marginBottom: 1, marginTop: 2 }}>
-          To encrypt a number m m to ciphertext c c the following formula is
-          applied.
-        </Typography>
-        <Typography sx={{ marginBottom: 1, marginTop: 2 }}>
-          It uses the numbers of the public key:
+          Step 3: Signature
         </Typography>
         <Typography sx={{ marginBottom: 3, marginTop: 4 }}>
-          c = m<sup>e</sup> modn
+          sig = m<sup>d</sup> modn
         </Typography>
         <Box
           sx={{
@@ -553,25 +547,18 @@ const RSA = () => {
           }}
           variant="subtitle1"
         >
-          c = {message_code}
-          <sup>{e}</sup> mod {n}
+          sig = {message_code}
+          <sup>{d}</sup> mod {n}
         </Typography>
-        <Typography>c = {encryptNum}</Typography>
+        <Typography>sig = {encryptNum}</Typography>
       </Box>
 
       <Box sx={{ marginBottom: 2 }}>
         <Typography fontSize={"35px"} fontWeight={"Bold"} marginTop={4}>
-          Step 4: Decrypt
-        </Typography>
-        <Typography sx={{ marginBottom: 1, marginTop: 2 }}>
-          To encrypt a number m m to ciphertext c c the following formula is
-          applied.
-        </Typography>
-        <Typography sx={{ marginBottom: 1, marginTop: 2 }}>
-          It uses the numbers of the public key:
+          Step 4: Verification
         </Typography>
         <Typography sx={{ marginBottom: 3, marginTop: 4 }}>
-          m'= c<sup>d</sup> modn
+          m'= c<sup>e</sup> modn
         </Typography>
         <Box
           sx={{
@@ -588,6 +575,7 @@ const RSA = () => {
             value={encryptNum2}
             multiline
             onChange={(e) => setEncryptNum2(e.target.value)}
+            disabled
           />
         </Box>
         <Typography
@@ -600,7 +588,7 @@ const RSA = () => {
           variant="subtitle1"
         >
           m' = {encryptNum2}
-          <sup>{d}</sup> mod {n}
+          <sup>{e}</sup> mod {n}
         </Typography>
         <Typography sx={{ marginBottom: 1, marginTop: 2 }}>
           m'(number) = {decryptNum}
@@ -613,4 +601,4 @@ const RSA = () => {
   );
 };
 
-export default RSA;
+export default RSA_Signature;
