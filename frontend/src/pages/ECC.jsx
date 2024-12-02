@@ -287,9 +287,14 @@ const ECC = () => {
               <Button variant="contained" onClick={handleCalculateP}>
                 Generate Public Key
               </Button>
-              <Typography textOverflow="break-word">
-                The public key is P = kG
-                {pX && pY ? <b>{` = (${pX}, ${pY})`}</b> : ""}
+              <Typography textOverflow="anywhere">
+                {pX && pY ? (
+                  <>
+                    The public key is <br /> P = <b>{`(${pX}, ${pY})`}</b>
+                  </>
+                ) : (
+                  ""
+                )}
               </Typography>
             </Stack>
 
@@ -306,7 +311,7 @@ const ECC = () => {
                     Elliptic curve parameters:{" "}
                     {a && b && p ? (
                       <b>
-                        (a, b, p) = ({a}, {b}, {p})
+                        <br />a = {a}, <br />b = {b}, <br />p = {p}
                       </b>
                     ) : (
                       ""
@@ -315,7 +320,7 @@ const ECC = () => {
                 </li>
                 <li>
                   <Typography gutterBottom>
-                    Generator point:{" "}
+                    Generator point: <br />
                     {generatorPointX && generatorPointY ? (
                       <b>
                         G = ({generatorPointX}, {generatorPointY})
@@ -327,12 +332,13 @@ const ECC = () => {
                 </li>
                 <li>
                   <Typography gutterBottom>
-                    Private key: {s ? <b>{s}</b> : ""}
+                    Private key: <br />
+                    {s ? <b>s = {s}</b> : ""}
                   </Typography>
                 </li>
                 <li>
                   <Typography gutterBottom>
-                    Public key:
+                    Public key: <br />
                     {pX && pY ? (
                       <b>
                         {" "}
@@ -376,7 +382,13 @@ const ECC = () => {
               </Button>
               <Typography>
                 The sender point is on the curve:{" "}
-                <strong>{isSenderPointOnCurve ? "Yes" : "No"}</strong>
+                <strong>
+                  {isSenderPointOnCurve !== null
+                    ? isSenderPointOnCurve
+                      ? "Yes"
+                      : "No"
+                    : ""}
+                </strong>
               </Typography>
             </Stack>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
@@ -407,7 +419,7 @@ const ECC = () => {
               </Button>
 
               <Typography>
-                The cipher text is:{" "}
+                The cipher text is: <br />
                 {m1X && m1Y ? (
                   <b>
                     M1 = ({m1X}, {m1Y})
@@ -415,9 +427,9 @@ const ECC = () => {
                 ) : (
                   ""
                 )}{" "}
+                <br />
                 {m2X && m2Y ? (
                   <>
-                    ,{" "}
                     <b>
                       M2 = ({m2X}, {m2Y})
                     </b>
