@@ -34,22 +34,22 @@ const ECC = () => {
   const handleShowError = (message) => {
     setError(message);
   };
-  const [a, setA] = useState(null);
-  const [b, setB] = useState(null);
-  const [p, setP] = useState(null);
-  const [generatorPointX, setGeneratorPointX] = useState(null);
-  const [generatorPointY, setGeneratorPointY] = useState(null);
-  const [senderPointX, setSenderPointX] = useState(null);
-  const [senderPointY, setSenderPointY] = useState(null);
-  const [pX, setPX] = useState(null);
-  const [pY, setPY] = useState(null);
-  const [m1X, setM1X] = useState(null);
-  const [m1Y, setM1Y] = useState(null);
-  const [m2X, setM2X] = useState(null);
-  const [m2Y, setM2Y] = useState(null);
-  const [k, setK] = useState(null);
-  const [decryptedPointX, setDecryptedPointX] = useState(null);
-  const [decryptedPointY, setDecryptedPointY] = useState(null);
+  const [a, setA] = useState("");
+  const [b, setB] = useState("");
+  const [p, setP] = useState("");
+  const [generatorPointX, setGeneratorPointX] = useState("");
+  const [generatorPointY, setGeneratorPointY] = useState("");
+  const [senderPointX, setSenderPointX] = useState("");
+  const [senderPointY, setSenderPointY] = useState("");
+  const [pX, setPX] = useState("");
+  const [pY, setPY] = useState("");
+  const [m1X, setM1X] = useState("");
+  const [m1Y, setM1Y] = useState("");
+  const [m2X, setM2X] = useState("");
+  const [m2Y, setM2Y] = useState("");
+  const [k, setK] = useState("");
+  const [decryptedPointX, setDecryptedPointX] = useState("");
+  const [decryptedPointY, setDecryptedPointY] = useState("");
   const [isGeneratorPointOnCurve, setIsGeneratorPointOnCurve] = useState(null);
   const [isSenderPointOnCurve, setIsSenderPointOnCurve] = useState(null);
   const satistyHasseTheorem = false;
@@ -177,21 +177,23 @@ const ECC = () => {
                 fullWidth
                 type="text"
                 value={a ?? ""}
-                onChange={(e) => setA(Number(e.target.value))}
+                onChange={(e) => setA(e.target.value)}
               />
               <TextField
                 label="b"
                 fullWidth
                 type="text"
-                value={b ?? ""}
-                onChange={(e) => setB(Number(e.target.value))}
+                value={b} // Ensure value is a string or valid number
+                onChange={(e) => {
+                  setB(e.target.value);
+                }}
               />
               <TextField
                 label="p"
                 fullWidth
                 type="text"
                 value={p ?? ""}
-                onChange={(e) => setP(Number(e.target.value))}
+                onChange={(e) => setP(e.target.value)}
               />
               <Typography>
                 The order of the elliptic curve is the total number of points on
@@ -239,14 +241,14 @@ const ECC = () => {
                 label="Generator Point x"
                 fullWidth
                 type="text"
-                value={generatorPointX ?? ""}
+                value={generatorPointX}
                 onChange={(e) => setGeneratorPointX(e.target.value)}
               />
               <TextField
                 label="Generator Point y"
                 fullWidth
                 type="text"
-                value={generatorPointY ?? ""}
+                value={generatorPointY}
                 onChange={(e) => setGeneratorPointY(e.target.value)}
               />
               <Button
@@ -285,9 +287,9 @@ const ECC = () => {
               <Button variant="contained" onClick={handleCalculateP}>
                 Generate Public Key
               </Button>
-              <Typography>
+              <Typography textOverflow="break-word">
                 The public key is P = kG
-                {pX && pY ? <b>{` = (${pX},${pY})`}</b> : ""}
+                {pX && pY ? <b>{` = (${pX}, ${pY})`}</b> : ""}
               </Typography>
             </Stack>
 
@@ -334,7 +336,7 @@ const ECC = () => {
                     {pX && pY ? (
                       <b>
                         {" "}
-                        P = ({pX},{pY})
+                        P = ({pX}, {pY})
                       </b>
                     ) : (
                       ""
