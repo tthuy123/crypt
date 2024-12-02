@@ -1,6 +1,37 @@
 import Client from "../client.api";
 
 const Common = {
+    async sum(data) {
+        try {
+            const response = await Client.post("common/sum", data); // gọi API pow
+            return response;
+        } catch (error) {
+            if (error.response) {
+                return error.response;
+            }
+        }
+    },
+    async gcd(data) {
+        try {
+            const response = await Client.post("common/gcd", data); // gọi API pow
+            return response;
+        } catch (error) {
+            if (error.response) {
+                return error.response;
+            }
+        }
+    },
+    async product(data) {
+        try {
+            const response = await Client.post("common/product", data); // gọi API pow
+            return response;
+        } catch (error) {
+            if (error.response) {
+                return error.response;
+            }
+        }
+    },
+
     async pow(data) {
         try {
             const response = await Client.post("common/pow", data); // gọi API pow
