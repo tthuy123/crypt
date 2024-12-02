@@ -31,18 +31,6 @@ const RSA = () => {
 
   const [publicKey, setPublicKey] = useState("");
   const [privateKey, setPrivateKey] = useState("");
-  const [powResult, setPowResult] = useState(null); // Lưu kết quả pow từ API
-  const [error, setError] = useState("");
-  const [setShowSnackbar, setsetShowSnackbar] = useState("");
-  const handleShowError = (message) => {
-    setError(message);
-    setShowSnackbar(true);
-  };
-
-  const handleCloseSnackbar = () => {
-    setShowSnackbar(false);
-    setError("");
-  };
 
   // API Handling
 
@@ -50,13 +38,11 @@ const RSA = () => {
     try {
       const result = await CommonAPI.checkPrime({ n: num });
       if (!result.is_prime) {
-        handleShowError(`The value (${num}) is not a prime number.`);
         return false;
       }
-      setError("");
+
       return true;
     } catch (err) {
-      handleShowError("Error checking if the number is a prime.");
       return false;
     }
   };
@@ -65,7 +51,6 @@ const RSA = () => {
       const result = await CommonAPI.sum({ a: a, b: b });
       return result;
     } catch (err) {
-      handleShowError("Error checking if the number is a prime.");
       return null;
     }
   };
@@ -74,7 +59,6 @@ const RSA = () => {
       const result = await CommonAPI.product({ a: a, b: b });
       return result;
     } catch (err) {
-      handleShowError("Error checking if the number is a prime.");
       return null;
     }
   };
@@ -134,7 +118,6 @@ const RSA = () => {
     const pVal = p;
     const qVal = q;
     const calculateValues = async () => {
-      // Update prime status for p and q
       await updatePrimeStatus(pVal, setpIsPrime, setpIsNaN);
       // Check if p equals q
       setpequalq(pVal === qVal);
@@ -156,16 +139,18 @@ const RSA = () => {
   useEffect(() => {
     const pVal = p;
     const qVal = q;
-    const calculateValues = async () => {
-      const product = await handleCalProduct(pVal, qVal);
-      const v1 = await handleCalSum(pVal, "-1");
-      const v2 = await handleCalSum(qVal, "-1");
-      const product_phi = await handleCalProduct(v1.result, v2.result);
-      setN(product.result);
-      setPhi(product_phi.result);
-    };
+    if (pVal != "" && qVal != "") {
+      const calculateValues = async () => {
+        const product = await handleCalProduct(pVal, qVal);
+        const v1 = await handleCalSum(pVal, "-1");
+        const v2 = await handleCalSum(qVal, "-1");
+        const product_phi = await handleCalProduct(v1.result, v2.result);
+        setN(product.result);
+        setPhi(product_phi.result);
+      };
 
-    calculateValues();
+      calculateValues();
+    }
   }, [p, q]);
 
   useEffect(() => {
