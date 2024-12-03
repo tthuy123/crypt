@@ -1,7 +1,26 @@
 from flask import Blueprint, request, jsonify
-from app.services.ecc import point_add, scalar_multiply, is_on_curve, ecc_encrypt, ecc_decrypt, ecc_generate_keypair
+from app.services.ecc import point_add, scalar_multiply, is_on_curve, ecc_encrypt, ecc_decrypt, ecc_generate_keypair, count_points_on_curve_with_prime_modulo
 
 bp = Blueprint('ecc', __name__, url_prefix='/api/ecc')
+
+@bp.route('/count-point', methods=['POST'])
+def count_points():
+    data = request.json
+    required_params = ['a', 'b', 'p']
+
+    for param in required_params:
+        if param not in data:
+            return jsonify({"error": f"Missing parameter: {param}"}), 400
+
+    try:
+        a, b, p = (int(data['a']), int(data['b']), int(data['p']))
+        result = count_points_on_curve_with_prime_modulo(p, a, b)
+        return jsonify({"result": result})
+    except ValueError:
+        return jsonify({"error": "Invalid input. Parameters must be integers"}), 400
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 @bp.route('/point-add', methods=['POST'])
 def add_points():
@@ -145,3 +164,37 @@ def decrypt():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     
+
+def legendre(A: int, B: int):
+    if B % 2 == 0:
+        raise RuntimeError(f"invalid B = {B}")
+
+    if B == 1:
+        return 1
+
+    if A % B == 0:
+        return 0
+
+    if A == 1:
+        return 1
+
+    r = pow(A % B, (B - 1) // 2, B)
+    if r == 1:
+        return 1
+    elif r == B - 1:
+        return -1
+    else:
+        return 0
+
+def count_points_on_curve_with_prime_modulo(p: int, a: int, b: int) -> int:
+    count = 0
+    for x in range(p):
+        y2 = (x**3 + a*x + b) % p
+        if y2 == 0:
+            count += 1
+            continue
+        j = legendre(y2, p)
+        if j == 1:
+            count += 2
+    count += 1
+    return count

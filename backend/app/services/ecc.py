@@ -1,7 +1,6 @@
 import random
 import hashlib
-from app.services.modular_arithmetic import is_quadratic_residue, mod_pow, multiplicative_inverse
-
+from app.services.modular_arithmetic import is_quadratic_residue, mod_pow, multiplicative_inverse, legendre_symbol
 def elliptic_func(x, a, b, p):
     return (mod_pow(x, 3, p) + a * x + b) % p
 
@@ -307,3 +306,20 @@ def ecdsa_verify(message, signature, public_key):
     add_u1P_u2Q = point_add(u1P, u2Q, curve)
     v = add_u1P_u2Q[0] % n
     return v == r
+
+def count_points_on_curve_with_prime_modulo(p: int, a: int, b: int) -> int:
+    count = 0
+    if count is not None:
+        return count
+    
+    count = 0
+    for x in range(p):
+        y2 = (x**3 + a*x + b) % p
+        if y2 == 0:
+            count += 1
+            continue
+        j = legendre_symbol(p, y2)
+        if j == 1:
+            count += 2
+    count += 1
+    return count
