@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.services.ecc import ecdsa_generate_keypair, ecdsa_sign, ecdsa_verify, is_valid_k
+from app.services.ecc import ecdsa_sign, ecdsa_verify, is_valid_k, hash_message
 
 bp = Blueprint('ecdsa', __name__, url_prefix='/api/ecdsa')
 
@@ -27,6 +27,23 @@ def check_k():
     except ValueError:
         return jsonify({"error": "Invalid input. Parameters must be integers"}), 400
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@bp.route('hash', methods=['POST'])
+def hash():
+    data = request.json
+    required_params = ['message']
+
+    for param in required_params:
+        if param not in data:
+            return jsonify({"error": f"Missing parameter: {param}"}), 400
+
+    try:
+        message = data['message']
+        hashed_message = hash_message(message)
+
+        return jsonify({"hashed_message": str(hashed_message)})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
