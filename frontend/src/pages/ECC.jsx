@@ -1,4 +1,4 @@
-import React, { useState , useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
@@ -8,6 +8,7 @@ import Box from "@mui/material/Box";
 import MathJax from "react-mathjax";
 import { createTheme, ThemeProvider } from "@mui/material";
 import ECCApi from "../api/modules/ecc.api";
+import ECDSAApi from "../api/modules/ecdsa.api";
 import CommonApi from "../api/modules/common.api";
 
 const theme = createTheme({
@@ -36,6 +37,9 @@ const ECC = () => {
   const [p, setP] = useState("");
   const [generatorPointX, setGeneratorPointX] = useState("");
   const [generatorPointY, setGeneratorPointY] = useState("");
+  const [message, setMessage] = useState("");
+  const [messageK, setMessageK] = useState("");
+
   const [senderPointX, setSenderPointX] = useState("");
   const [senderPointY, setSenderPointY] = useState("");
   const [pX, setPX] = useState("");
@@ -53,6 +57,25 @@ const ECC = () => {
   const [isTheNumberOfCurvePointsPrime, setIsTheNumberOfCurvePointsPrime] =
     useState(null);
   const [theNumberOfCurvePoints, setTheNumberOfCurvePoints] = useState(null);
+
+  const handleCalculateSenderPoint = async () => {
+    try {
+      const result = await ECCApi.pointMultiply({
+        a,
+        b,
+        p,
+        pX: generatorPointX,
+        pY: generatorPointY,
+        k: message.length,
+      });
+
+      setSenderPointX(result.result.x);
+      setSenderPointY(result.result.y);
+      setError("");
+    } catch (err) {
+      handleShowError("Cannot calculate sender point", err.message);
+    }
+  };
 
   const handleCheckIfPPrime = async () => {
     try {
@@ -400,6 +423,13 @@ const ECC = () => {
                 elliptic curve. This can be achieved through encoding schemes
                 that map the message to a valid curve point.
               </Typography>
+
+              <TextField
+                label="Message x"
+                fullWidth
+                type="text"
+                onChange={(e) => setMessage(e.target.value)}
+              />
               <TextField
                 label="Sender Point x"
                 fullWidth
@@ -414,11 +444,8 @@ const ECC = () => {
                 value={senderPointY ?? ""}
                 onChange={(e) => setSenderPointY(e.target.value)}
               />
-              <Button
-                variant="contained"
-                onClick={handleCheckIfSenderPointOnCurve}
-              >
-                Check if this point is on the curve.
+              <Button variant="contained" onClick={handleCalculateSenderPoint}>
+                Generate Message Point
               </Button>
               <Typography>
                 The sender point is on the curve:{" "}
