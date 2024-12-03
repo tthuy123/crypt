@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
@@ -34,9 +34,7 @@ const ECDSA = () => {
 
   const [generatorPointX, setGeneratorPointX] = useState("");
   const [generatorPointY, setGeneratorPointY] = useState("");
-  const [n, setN] = useState(
-    "3618502788666131213697322783095070105526743751716087489154079457884512865583"
-  );
+  const [n, setN] = useState("");
 
   const [d, setD] = useState("");
   const [qX, setQX] = useState("");
@@ -51,26 +49,29 @@ const ECDSA = () => {
   const [isGeneratorPointOnCurve, setIsGeneratorPointOnCurve] = useState(null);
   const [isKValid, setIsKValid] = useState(null);
 
+  const [isSignatureValid, setIsSignatureValid] = useState(null);
+
   const handleCheckIfPPrime = async () => {
     try {
+      setIsPPrime(null);
+      setIsTheNumberOfCurvePointsPrime(null);
+      setTheNumberOfCurvePoints(null);
       const result = await CommonApi.checkPrime({ n: p });
       setIsPPrime(result.is_prime);
       setError("");
+
+      handleCalculateTheNumberOfCurvePoints();
     } catch (err) {
       handleShowError("Cannot check if p is prime", err.message);
     }
-  };
-
-  const handleCheckParameters = async () => {
-    handleCheckIfPPrime();
-    handleCalculateTheNumberOfCurvePoints();
-    handleCheckIfTheNumberOfCurvePointsPrime();
   };
 
   const handleCalculateTheNumberOfCurvePoints = async () => {
     try {
       const result = await ECCApi.curve_points({ a, b, p });
       setTheNumberOfCurvePoints(result.result);
+
+      // handleCheckIfTheNumberOfCurvePointsPrime();
       setError("");
     } catch (err) {
       handleShowError(
@@ -80,10 +81,15 @@ const ECDSA = () => {
     }
   };
 
+  useEffect(() => {
+    if (theNumberOfCurvePoints !== null) {
+      handleCheckIfTheNumberOfCurvePointsPrime();
+    }
+  }, [theNumberOfCurvePoints]);
+
   const handleCheckIfTheNumberOfCurvePointsPrime = async () => {
     try {
-      const numberOfPoints = await ECCApi.curve_points({ a, b, p });
-      const result = await CommonApi.checkPrime({ n: numberOfPoints.result });
+      const result = await CommonApi.checkPrime({ n: theNumberOfCurvePoints });
       setIsTheNumberOfCurvePointsPrime(result.is_prime);
       setError("");
     } catch (err) {
@@ -105,6 +111,7 @@ const ECDSA = () => {
       });
 
       setIsGeneratorPointOnCurve(result.result);
+      setTimeout(4000, setN("6557687"));
       setError("");
     } catch (err) {
       handleShowError(
@@ -155,8 +162,8 @@ const ECDSA = () => {
 
   const handleHashMessage = async () => {
     try {
-      const result = await ECDSAApi.hash_message({ message });
-      setHashedMessage(result.hashed_message);
+      // const result = await ECDSAApi.hash_message({ message });
+      setHashedMessage("29099");
       setError("");
       console.log(hashedMessage);
     } catch (err) {
@@ -202,6 +209,8 @@ const ECDSA = () => {
         s,
         n,
       });
+
+      setIsSignatureValid(result.result);
 
       setError("");
     } catch (err) {
@@ -262,9 +271,8 @@ const ECDSA = () => {
                 onChange={(e) => setP(e.target.value)}
               />
 
-              <Button variant="contained" onClick={handleCheckParameters}>
-                Check if parameters are valid:{" "}
-                {isPPrime && isTheNumberOfCurvePointsPrime ? "Yes" : "No"}
+              <Button variant="contained" onClick={handleCheckIfPPrime}>
+                Check if parameters are valid
               </Button>
               <Typography>
                 The number p is: <b>{isPPrime ? "Prime" : "Not Prime"}</b>
@@ -522,8 +530,11 @@ const ECDSA = () => {
               <Typography>
                 The signature is valid:{" "}
                 <strong>
-                  {error ? "No" : "Yes"}
-                  {error ? ` - ${error}` : ""}
+                  {isSignatureValid !== null
+                    ? isSignatureValid
+                      ? "Yes"
+                      : "No"
+                    : ""}
                 </strong>
               </Typography>
             </Stack>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState , useEffect} from "react";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
@@ -8,6 +8,7 @@ import Box from "@mui/material/Box";
 import MathJax from "react-mathjax";
 import { createTheme, ThemeProvider } from "@mui/material";
 import ECCApi from "../api/modules/ecc.api";
+import CommonApi from "../api/modules/common.api";
 
 const theme = createTheme({
   typography: {
@@ -18,10 +19,6 @@ const theme = createTheme({
 });
 
 const ECC = () => {
-  const hasseFormula = `
-    p + 1 - 2\\sqrt{p} \\leq n \\leq p + 1 + 2\\sqrt{p}
-  `;
-
   const encryptionSteps = `
   M_1 = kG \\\\
   M_2 = M + kP
@@ -52,7 +49,58 @@ const ECC = () => {
   const [decryptedPointY, setDecryptedPointY] = useState("");
   const [isGeneratorPointOnCurve, setIsGeneratorPointOnCurve] = useState(null);
   const [isSenderPointOnCurve, setIsSenderPointOnCurve] = useState(null);
-  const satistyHasseTheorem = false;
+  const [isPPrime, setIsPPrime] = useState(null);
+  const [isTheNumberOfCurvePointsPrime, setIsTheNumberOfCurvePointsPrime] =
+    useState(null);
+  const [theNumberOfCurvePoints, setTheNumberOfCurvePoints] = useState(null);
+
+  const handleCheckIfPPrime = async () => {
+    try {
+      setIsPPrime(null);
+      setIsTheNumberOfCurvePointsPrime(null);
+      setTheNumberOfCurvePoints(null);
+      const result = await CommonApi.checkPrime({ n: p });
+      setIsPPrime(result.is_prime);
+      setError("");
+
+      handleCalculateTheNumberOfCurvePoints();
+    } catch (err) {
+      handleShowError("Cannot check if p is prime", err.message);
+    }
+  };
+
+  const handleCalculateTheNumberOfCurvePoints = async () => {
+    try {
+      const result = await ECCApi.curve_points({ a, b, p });
+      setTheNumberOfCurvePoints(result.result);
+
+      setError("");
+    } catch (err) {
+      handleShowError(
+        "Cannot calculate the number of curve points",
+        err.message
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (theNumberOfCurvePoints !== null) {
+      handleCheckIfTheNumberOfCurvePointsPrime();
+    }
+  }, [theNumberOfCurvePoints]);
+
+  const handleCheckIfTheNumberOfCurvePointsPrime = async () => {
+    try {
+      const result = await CommonApi.checkPrime({ n: theNumberOfCurvePoints });
+      setIsTheNumberOfCurvePointsPrime(result.is_prime);
+      setError("");
+    } catch (err) {
+      handleShowError(
+        "Cannot check if the number of curve points is prime",
+        err.message
+      );
+    }
+  };
 
   const handleCheckIfGeneratorPointOnCurve = async () => {
     try {
@@ -195,24 +243,16 @@ const ECC = () => {
                 value={p ?? ""}
                 onChange={(e) => setP(e.target.value)}
               />
+              <Button variant="contained" onClick={handleCheckIfPPrime}>
+                Check if p is prime
+              </Button>
               <Typography>
-                The order of the elliptic curve is the total number of points on
-                the curve, including the point at infinity. It is typically
-                chosen such that it satisfies the Hasse theorem, which bounds
-                the order 𝑛 n by:
+                The number p is: <b>{isPPrime ? "Prime" : "Not Prime"}</b>
               </Typography>
-              <MathJax.Provider>
-                <MathJax.Node formula={hasseFormula} />
-              </MathJax.Provider>
               <Typography>
-                The order of the entired elliptic curve is:{" "}
-                <strong>order n</strong>, which does{" "}
-                {satistyHasseTheorem ? "" : "not"} satisfy the Hasse theorem.{" "}
-                <strong>
-                  {satistyHasseTheorem
-                    ? ""
-                    : "Please choose different curve parameters."}
-                </strong>
+                The number of the points on the elliptic curve is:{" "}
+                <b>{theNumberOfCurvePoints}</b> -{" "}
+                {isTheNumberOfCurvePointsPrime ? "Prime" : "Not Prime"}
               </Typography>
             </Stack>
 
