@@ -1,11 +1,26 @@
 from flask import Blueprint, request, jsonify
-from app.services.math_utils import modular_pow, modular_inverse, is_prime
+from app.services.math_utils import modular_pow, modular_inverse, is_prime, generate_prime
 from app.services.text import encrypt_single, encrypt_string, decrypt, decrypt_string
 from math import gcd
 
 bp = Blueprint('common', __name__, url_prefix='/api/common')
 
+@bp.route('/generate-prime', methods=['POST'])
+def generate_prime1():
+    data = request.json
+    if 'n' not in data:
+        return jsonify({"error": "Missing 'n' parameter"}), 400
+
+    try:
+        n = int(data['n'])
+        result = str(generate_prime(n))
+        return jsonify({"n": n, "result": result})
+
+    except ValueError:
+        return jsonify({"error": "Invalid input. 'a', 'b'"}), 400
+    
 @bp.route('/sum', methods=['POST'])
+
 def calculate_sum():
     data = request.json
     if 'a' not in data or 'b' not in data:
