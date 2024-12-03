@@ -204,6 +204,22 @@ def is_prime(n):
   # even numbers and squares have been eliminated by this point
   return lucas_pp(n, D, 1, (1-D)//4) # slightly faster than lucas_spp
 
+def generate_prime(numOfbits, chosen_primes=set()):
+    if numOfbits < 2:
+        raise ValueError("Number of bits must be at least 2")
+    
+    # Xác định phạm vi của số có numOfbits bit
+    min_num = 2**(numOfbits - 1)
+    max_num = 2**numOfbits - 1
+
+    while True:
+        # Tạo một số ngẫu nhiên trong phạm vi
+        candidate = random.randint(min_num, max_num)
+        
+        # Kiểm tra nếu số đó là nguyên tố và chưa được chọn
+        if is_prime(candidate) and candidate not in chosen_primes:
+            chosen_primes.add(candidate)  # Thêm số mới chọn vào tập đã chọn
+            return candidate
 
 # def is_prime(n):
 #     if n <= 1:

@@ -9,6 +9,8 @@ import Factors from './pages/Factors.jsx';
 
 import { createTheme, ThemeProvider } from "@mui/material";
 import RSA_Signature from "./pages/RSA_Signature.jsx";
+import Primality_check from "./pages/Primality_check.jsx";
+import Generate_prime from "./pages/Generate_prime.jsx";
 
 const theme = createTheme({
   typography: {
@@ -30,6 +32,8 @@ const App = () => {
             <Route path="/rsa-signature" element={<RSA_Signature />} />
             <Route path="/ecc" element={<ECC />} />
             <Route path="/factors" element={<Factors />} />
+            <Route path="/primality-testing" element={<Primality_check />} />
+            <Route path="/generate-prime" element={<Generate_prime />} />
           </Route>
         </Routes>
       </BrowserRouter>

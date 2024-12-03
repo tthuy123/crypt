@@ -1,9 +1,20 @@
 import Client from "../client.api";
 
 const Common = {
+    async generate_prime(data) {
+        try {
+            const response = await Client.post("common/generate-prime", data);
+            return response;
+        } catch (error) {
+            if (error.response) {
+                return error.response;
+            }
+        }
+    },
+
     async sum(data) {
         try {
-            const response = await Client.post("common/sum", data); // gọi API pow
+            const response = await Client.post("common/sum", data);
             return response;
         } catch (error) {
             if (error.response) {
