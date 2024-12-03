@@ -4,8 +4,10 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import MathJax from "react-mathjax";
 import { createTheme, ThemeProvider } from "@mui/material";
+import ECCApi from "../api/modules/ecc.api";
 
 const theme = createTheme({
   typography: {
@@ -25,9 +27,13 @@ const ECC = () => {
   M_2 = M + kP
 `;
   const decryptionSteps = `
-M = M_2 - sM_1
+  M = M_2 - sM_1
 `;
 
+  const [error, setError] = useState("");
+  const handleShowError = (message) => {
+    setError(message);
+  };
   const [a, setA] = useState(null);
   const [b, setB] = useState(null);
   const [p, setP] = useState(null);
@@ -35,305 +41,424 @@ M = M_2 - sM_1
   const [generatorPointY, setGeneratorPointY] = useState(null);
   const [senderPointX, setSenderPointX] = useState(null);
   const [senderPointY, setSenderPointY] = useState(null);
+  const [pX, setPX] = useState(null);
+  const [pY, setPY] = useState(null);
+  const [m1X, setM1X] = useState(null);
+  const [m1Y, setM1Y] = useState(null);
+  const [m2X, setM2X] = useState(null);
+  const [m2Y, setM2Y] = useState(null);
   const [k, setK] = useState(null);
-  const isSenderPointOnCurve = useState(false);
+  const [decryptedPointX, setDecryptedPointX] = useState(null);
+  const [decryptedPointY, setDecryptedPointY] = useState(null);
+  const [isGeneratorPointOnCurve, setIsGeneratorPointOnCurve] = useState(null);
+  const [isSenderPointOnCurve, setIsSenderPointOnCurve] = useState(null);
   const satistyHasseTheorem = false;
+
+  const handleCheckIfGeneratorPointOnCurve = async () => {
+    try {
+      const result = await ECCApi.isPointOnCurve({
+        a,
+        b,
+        p,
+        pX: generatorPointX,
+        pY: generatorPointY,
+      });
+
+      setIsGeneratorPointOnCurve(result.result);
+      setError("");
+    } catch (err) {
+      handleShowError(
+        "Cannot check if generator point is on curve",
+        err.message
+      );
+    }
+  };
+
+  const handleCheckIfSenderPointOnCurve = async () => {
+    try {
+      const result = await ECCApi.isPointOnCurve({
+        a,
+        b,
+        p,
+        pX: senderPointX,
+        pY: senderPointY,
+      });
+
+      setIsSenderPointOnCurve(result.result);
+      setError("");
+    } catch (err) {
+      handleShowError("Cannot check if point is on curve", err.message);
+    }
+  };
+
+  const handleCalculateP = async () => {
+    try {
+      const result = await ECCApi.pointMultiply({
+        a,
+        b,
+        p,
+        pX: generatorPointX,
+        pY: generatorPointY,
+        k: s,
+      });
+
+      setPX(result.result.x);
+      setPY(result.result.y);
+      setError("");
+    } catch (err) {
+      handleShowError("Cannot calculate P", err.message);
+    }
+  };
+
+  const handleEncrypt = async () => {
+    try {
+      const result = await ECCApi.encrypt({
+        a,
+        b,
+        p,
+        mX: senderPointX,
+        mY: senderPointY,
+        pX: generatorPointX,
+        pY: generatorPointY,
+        bX: pX,
+        bY: pY,
+        k,
+      });
+      setM1X(result.result.m1X);
+      setM1Y(result.result.m1Y);
+      setM2X(result.result.m2X);
+      setM2Y(result.result.m2Y);
+    } catch (err) {
+      handleShowError("Cannot encrypt", err.message);
+    }
+  };
+
+  const handleDecrypt = async () => {
+    try {
+      const result = await ECCApi.decrypt({
+        a,
+        b,
+        p,
+        m1X,
+        m1Y,
+        m2X,
+        m2Y,
+        pX,
+        pY,
+        s,
+      });
+
+      setDecryptedPointX(result.result.x);
+      setDecryptedPointY(result.result.y);
+      console.log(decryptedPointX, decryptedPointY);
+    } catch (err) {
+      handleShowError("Cannot decrypt", err.message);
+    }
+  };
 
   const [s, setS] = useState(null);
   return (
     <ThemeProvider theme={theme}>
-      <Stack spacing={2} sx={{ padding: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          Elliptic Curve Cryptography
-        </Typography>
-
-        {/* Input Fields */}
-        <Paper sx={{ padding: 3, marginBottom: 3 }}>
-          {/* Elliptic curve parameters */}
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Step 1: Set up your elliptic curve parameters.
+      <Box p={5}>
+        <Stack spacing={2} sx={{ padding: 3 }}>
+          <Typography variant="h4" gutterBottom>
+            Elliptic Curve Cryptography
           </Typography>
-          <Stack p={2} spacing={2}>
-            <TextField
-              label="a"
-              fullWidth
-              type="number"
-              value={a ?? ""}
-              onChange={(e) => setA(Number(e.target.value))}
-            />
-            <TextField
-              label="b"
-              fullWidth
-              type="number"
-              value={b ?? ""}
-              onChange={(e) => setB(Number(e.target.value))}
-            />
-            <TextField
-              label="p"
-              fullWidth
-              type="number"
-              value={p ?? ""}
-              onChange={(e) => setP(Number(e.target.value))}
-            />
-            <Typography>
-              The order of the elliptic curve is the total number of points on
-              the curve, including the point at infinity. It is typically chosen
-              such that it satisfies the Hasse theorem, which bounds the order 𝑛
-              n by:
+
+          {/* Input Fields */}
+          <Paper sx={{ padding: 3, marginBottom: 3 }}>
+            {/* Elliptic curve parameters */}
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              Step 1: Set up your elliptic curve parameters.
             </Typography>
-            <MathJax.Provider>
-              <Typography variant="body1">
-                <MathJax.Node formula={hasseFormula} />
+            <Stack p={2} spacing={2}>
+              <TextField
+                label="a"
+                fullWidth
+                type="text"
+                value={a ?? ""}
+                onChange={(e) => setA(Number(e.target.value))}
+              />
+              <TextField
+                label="b"
+                fullWidth
+                type="text"
+                value={b ?? ""}
+                onChange={(e) => setB(Number(e.target.value))}
+              />
+              <TextField
+                label="p"
+                fullWidth
+                type="text"
+                value={p ?? ""}
+                onChange={(e) => setP(Number(e.target.value))}
+              />
+              <Typography>
+                The order of the elliptic curve is the total number of points on
+                the curve, including the point at infinity. It is typically
+                chosen such that it satisfies the Hasse theorem, which bounds
+                the order 𝑛 n by:
               </Typography>
-            </MathJax.Provider>
-            <Typography>
-              The order of the entired elliptic curve is:{" "}
-              <strong>order n</strong>, which does{" "}
-              {satistyHasseTheorem ? "" : "not"} satisfy the Hasse theorem.{" "}
-              <strong>
-                {satistyHasseTheorem
-                  ? ""
-                  : "Please choose different curve parameters."}
-              </strong>
-            </Typography>
-          </Stack>
+              <MathJax.Provider>
+                <MathJax.Node formula={hasseFormula} />
+              </MathJax.Provider>
+              <Typography>
+                The order of the entired elliptic curve is:{" "}
+                <strong>order n</strong>, which does{" "}
+                {satistyHasseTheorem ? "" : "not"} satisfy the Hasse theorem.{" "}
+                <strong>
+                  {satistyHasseTheorem
+                    ? ""
+                    : "Please choose different curve parameters."}
+                </strong>
+              </Typography>
+            </Stack>
 
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Step 2: Choose a generator point.
-          </Typography>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              Step 2: Choose a generator point.
+            </Typography>
 
-          {/* Generator point */}
-          <Stack p={2} spacing={2}>
-            <Typography component="p">
-              For the elliptic curves over finite fields, the ECC cryptosystems
-              define a special pre-defined (constant) EC point called generator
-              point G (base point), which can generate any other point in its
-              subgroup over the elliptic curve by multiplying G by some integer
-              in the range [0...r].
+            {/* Generator point */}
+            <Stack p={2} spacing={2}>
+              <Typography component="p">
+                For the elliptic curves over finite fields, the ECC
+                cryptosystems define a special pre-defined (constant) EC point
+                called generator point G (base point), which can generate any
+                other point in its subgroup over the elliptic curve by
+                multiplying G by some integer in the range [0...r].
+              </Typography>
+              <Typography>
+                The number r is called "order" of the cyclic subgroup generated
+                by G.{" "}
+                <strong>
+                  The order of the generator point G should be a prime number
+                </strong>
+                .
+              </Typography>
+              <TextField
+                label="Generator Point x"
+                fullWidth
+                type="text"
+                value={generatorPointX ?? ""}
+                onChange={(e) => setGeneratorPointX(e.target.value)}
+              />
+              <TextField
+                label="Generator Point y"
+                fullWidth
+                type="text"
+                value={generatorPointY ?? ""}
+                onChange={(e) => setGeneratorPointY(e.target.value)}
+              />
+              <Button
+                variant="contained"
+                onClick={handleCheckIfGeneratorPointOnCurve}
+              >
+                Check if this point is on the curve.
+              </Button>
+              <Typography>
+                The sender point is on the curve:{" "}
+                <strong>
+                  {isGeneratorPointOnCurve !== null
+                    ? isGeneratorPointOnCurve
+                      ? "Yes"
+                      : "No"
+                    : ""}
+                </strong>
+              </Typography>
+            </Stack>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              Step 3: Choose a private key.
             </Typography>
-            <Typography>
-              The number r is called "order" of the cyclic subgroup generated by
-              G.{" "}
-              <strong>
-                The order of the generator point G should be a prime number
-              </strong>
-              .
-            </Typography>
-            <TextField
-              label="Generator Point x"
-              fullWidth
-              type="number"
-              value={generatorPointX ?? ""}
-              onChange={(e) => setGeneratorPointX(e.target.value)}
-            />
-            <TextField
-              label="Generator Point y"
-              fullWidth
-              type="number"
-              value={generatorPointY ?? ""}
-              onChange={(e) => setGeneratorPointY(e.target.value)}
-            />
-          </Stack>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Step 3: Choose a private key.
-          </Typography>
-          <Stack p={2} spacing={2}>
-            <Typography>
-              The private key is a randomly chosen integer in the range [1,
-              r-1].
-            </Typography>
-            <TextField
-              label="Private key s"
-              fullWidth
-              type="number"
-              value={s ?? ""}
-              onChange={(e) => setS(e.target.value)}
-            />
+            <Stack p={2} spacing={2}>
+              <Typography>
+                The private key is a randomly chosen integer in the range [1,
+                r-1].
+              </Typography>
+              <TextField
+                label="Private key s"
+                fullWidth
+                type="text"
+                value={s ?? ""}
+                onChange={(e) => setS(e.target.value)}
+              />
 
-            <Button variant="contained">Generate Public Key</Button>
-            <Typography>
-              The public key is P = kG = <b>Point P</b>.
-            </Typography>
-          </Stack>
+              <Button variant="contained" onClick={handleCalculateP}>
+                Generate Public Key
+              </Button>
+              <Typography>
+                The public key is P = kG
+                {pX && pY ? <b>{` = (${pX},${pY})`}</b> : ""}
+              </Typography>
+            </Stack>
 
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Private Key, Public Key and the Generator Point in ECC
-          </Typography>
-          <Stack p={2} spacing={2}>
-            <Typography gutterBottom>
-              After the abovementioned steps, in ECC we have:
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              Private Key, Public Key and the Generator Point in ECC
+            </Typography>
+            <Stack p={2} spacing={2}>
+              <Typography gutterBottom>
+                After the abovementioned steps, in ECC we have:
+              </Typography>
               <ul>
                 <li>
-                  Elliptic curve parameters: (a, b, p) = ({a}, {b}, {p})
+                  <Typography gutterBottom>
+                    Elliptic curve parameters:{" "}
+                    {a && b && p ? (
+                      <b>
+                        (a, b, p) = ({a}, {b}, {p})
+                      </b>
+                    ) : (
+                      ""
+                    )}
+                  </Typography>
                 </li>
                 <li>
-                  Generator point: G({generatorPointX}, {generatorPointY})
+                  <Typography gutterBottom>
+                    Generator point:{" "}
+                    {generatorPointX && generatorPointY ? (
+                      <b>
+                        G = ({generatorPointX}, {generatorPointY})
+                      </b>
+                    ) : (
+                      ""
+                    )}
+                  </Typography>
                 </li>
-                <li>Private key: {s}</li>
-                <li>Public key: P = (,)</li>
+                <li>
+                  <Typography gutterBottom>
+                    Private key: {s ? <b>{s}</b> : ""}
+                  </Typography>
+                </li>
+                <li>
+                  <Typography gutterBottom>
+                    Public key:
+                    {pX && pY ? (
+                      <b>
+                        {" "}
+                        P = ({pX},{pY})
+                      </b>
+                    ) : (
+                      ""
+                    )}
+                  </Typography>
+                </li>
               </ul>
+            </Stack>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              Step 4: Encrypt.
             </Typography>
-          </Stack>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Step 4: Encrypt.
-          </Typography>
-          <Stack p={2} spacing={2}>
-            <Typography>
-              The message must first be converted into a point 𝑀 on the elliptic
-              curve. This can be achieved through encoding schemes that map the
-              message to a valid curve point.
+            <Stack p={2} spacing={2}>
+              <Typography>
+                The message must first be converted into a point 𝑀 on the
+                elliptic curve. This can be achieved through encoding schemes
+                that map the message to a valid curve point.
+              </Typography>
+              <TextField
+                label="Sender Point x"
+                fullWidth
+                type="text"
+                value={senderPointX ?? ""}
+                onChange={(e) => setSenderPointX(e.target.value)}
+              />
+              <TextField
+                label="Sender Point y"
+                fullWidth
+                type="text"
+                value={senderPointY ?? ""}
+                onChange={(e) => setSenderPointY(e.target.value)}
+              />
+              <Button
+                variant="contained"
+                onClick={handleCheckIfSenderPointOnCurve}
+              >
+                Check if this point is on the curve.
+              </Button>
+              <Typography>
+                The sender point is on the curve:{" "}
+                <strong>{isSenderPointOnCurve ? "Yes" : "No"}</strong>
+              </Typography>
+            </Stack>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              Step 4.1: Generate a random number k.
             </Typography>
-            <TextField
-              label="Sender Point x"
-              fullWidth
-              type="number"
-              value={senderPointX ?? ""}
-              onChange={(e) => setSenderPointX(e.target.value)}
-            />
-            <TextField
-              label="Sender Point y"
-              fullWidth
-              type="number"
-              value={senderPointY ?? ""}
-              onChange={(e) => setSenderPointY(e.target.value)}
-            />
-            <Button variant="contained">
-              Check if this point is on the curve.
-            </Button>
-            <Typography>
-              The sender point is on the curve:{" "}
-              <strong>{isSenderPointOnCurve ? "Yes" : "No"}</strong>
+            <Stack p={2} spacing={2}>
+              <Typography>
+                The random number k is generated in the range [1, r-1].
+              </Typography>
+              <TextField
+                label="Random number k"
+                fullWidth
+                type="text"
+                value={k ?? ""}
+                onChange={(e) => setK(e.target.value)}
+              />
+            </Stack>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              Step 4.2: Calculate the cipher text.
             </Typography>
-          </Stack>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Step 4.1: Generate a random number k.
-          </Typography>
-          <Stack p={2} spacing={2}>
-            <Typography>
-              The random number k is generated in the range [1, r-1].
-            </Typography>
-            <TextField
-              label="Random number k"
-              fullWidth
-              type="number"
-              value={k ?? ""}
-              onChange={(e) => setK(e.target.value)}
-            />
-          </Stack>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Step 4.2: Calculate the cipher text.
-          </Typography>
-          <Stack p={2} spacing={2}>
-            <Typography>The cipher text is calculated as follows:</Typography>
-            <MathJax.Provider>
-              <Typography variant="body1">
+            <Stack p={2} spacing={2}>
+              <Typography>The cipher text is calculated as follows:</Typography>
+              <MathJax.Provider>
                 <MathJax.Node formula={encryptionSteps} />
-              </Typography>
-            </MathJax.Provider>
-            <Typography>
-              The cipher text is: <b>(M1, M2)</b>: <b>(,), (,)</b>. The sender
-              can now send this ciphertext to the receiver.
-            </Typography>
-          </Stack>
+              </MathJax.Provider>
+              <Button variant="contained" onClick={handleEncrypt}>
+                Encrypt
+              </Button>
 
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Step 5: Decrypt.
-          </Typography>
-          <Stack p={2} spacing={2}>
-            <Typography>
-              The receiver can calculate the original message M using the
-              following formula:
+              <Typography>
+                The cipher text is:{" "}
+                {m1X && m1Y ? (
+                  <b>
+                    M1 = ({m1X}, {m1Y})
+                  </b>
+                ) : (
+                  ""
+                )}{" "}
+                {m2X && m2Y ? (
+                  <>
+                    ,{" "}
+                    <b>
+                      M2 = ({m2X}, {m2Y})
+                    </b>
+                  </>
+                ) : (
+                  ""
+                )}
+              </Typography>
+              <Typography>
+                {m1X && m1Y && m2X && m2Y
+                  ? "The sender can now send this ciphertext to the receiver."
+                  : ""}
+              </Typography>
+            </Stack>
+
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              Step 5: Decrypt.
             </Typography>
-            <MathJax.Provider>
-              <Typography variant="body1">
+            <Stack p={2} spacing={2}>
+              <Typography>
+                The receiver can calculate the original message M using the
+                following formula:
+              </Typography>
+              <MathJax.Provider>
                 <MathJax.Node formula={decryptionSteps} />
+              </MathJax.Provider>
+              <Button variant="contained" onClick={handleDecrypt}>
+                Decrypt
+              </Button>
+              <Typography>
+                The original message M is:{" "}
+                {decryptedPointX && decryptedPointY ? (
+                  <b>
+                    ({decryptedPointX}, {decryptedPointY})
+                  </b>
+                ) : (
+                  ""
+                )}
               </Typography>
-            </MathJax.Provider>
-            <Typography>
-              The original message M is: <b>(,)</b>.
-            </Typography>
-          </Stack>
-        </Paper>
-
-        {/* Buttons to trigger API calls */}
-        {/* <Box sx={{ marginBottom: 3 }}>
-        <Button
-          variant="contained"
-          onClick={handleFactorsRequest}
-          sx={{ marginRight: 2 }}
-        >
-          Get Factors
-        </Button>
-        <Button
-          variant="contained"
-          onClick={handlePrimitiveRequest}
-          sx={{ marginRight: 2 }}
-        >
-          Get Primitive Root
-        </Button>
-        <Button
-          variant="contained"
-          onClick={handleKeyGenerateRequest}
-          sx={{ marginRight: 2 }}
-        >
-          Generate Keys
-        </Button>
-        <Button
-          variant="contained"
-          onClick={handleEncryptRequest}
-          sx={{ marginRight: 2 }}
-        >
-          Encrypt
-        </Button>
-        <Button variant="contained" onClick={handleDecryptRequest}>
-          Decrypt
-        </Button>
-      </Box> */}
-
-        {/* Results */}
-        {/* <Paper sx={{ padding: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Results
-        </Typography>
-        {factorsResult && (
-          <Typography>
-            <strong>Factors of {n}:</strong> {factorsResult.factors.join(", ")}
-          </Typography>
-        )}
-
-        {primitiveResult && (
-          <Typography>
-            <strong>Primitive Root of {n}:</strong>{" "}
-            {primitiveResult.primitive_root}
-          </Typography>
-        )}
-
-        {keyResult && (
-          <Typography>
-            <strong>Private Key:</strong> {keyResult.private_key}
-            <br />
-            <strong>Public Key:</strong> {keyResult.public_key}
-          </Typography>
-        )}
-
-        {encryptedResult && (
-          <Typography>
-            <strong>Encrypted Message:</strong>
-            <br />
-            Y1: {encryptedResult.y1}
-            <br />
-            Y2: {encryptedResult.y2}
-          </Typography>
-        )}
-
-        {decryptedResult && (
-          <Typography>
-            <strong>Decrypted Message:</strong>{" "}
-            {decryptedResult.decrypted_message}
-          </Typography>
-        )}
-      </Paper> */}
-      </Stack>
+            </Stack>
+          </Paper>
+        </Stack>
+      </Box>
     </ThemeProvider>
   );
 };
