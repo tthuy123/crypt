@@ -9,17 +9,11 @@ import Stack from "@mui/material/Stack";
 import Paper from "@mui/material/Paper";
 import Alert from "@mui/material/Alert";
 import Snackbar from "@mui/material/Snackbar";
-import { createTheme, ThemeProvider } from "@mui/material";
+import MathJax from 'react-mathjax';
 
-const theme = createTheme({
-  typography: {
-    fontFamily: ["Poppins", "Neue Helvetica Condensed BQ", "san-serif"].join(
-      ","
-    ),
-  },
-});
+
 const ElGamal = () => {
-  const [p, setP] = useState(23); // Prime number
+  const [p, setP] = useState("253832077567910969318490676867875139739"); // Prime number
   const [alpha, setAlpha] = useState(""); // Primitive root of module p
   const [a, setA] = useState(""); // Random number, private key
   const [k, setK] = useState(""); // Random number, encryption number
@@ -35,6 +29,20 @@ const ElGamal = () => {
 
   const [error, setError] = useState("");
   const [showSnackbar, setShowSnackbar] = useState(false);
+
+  const key_generate_formula = `
+    \\beta  =  \\alpha^{a} \\mod p
+`;
+
+  const encrypt_formula1 = `
+    y1 = \\alpha^k \\mod p
+  `
+  const encrypt_formula2 = `
+    y2 = \\beta^k \\cdot x \\mod p
+  `
+  const decrypt_formula = `
+    x = \\left( y_2 \\cdot \\left( y_1^{-1} \\right) \\right) \\mod p
+  `
 
   const handleShowError = (message) => {
     setError(message);
@@ -95,8 +103,10 @@ const ElGamal = () => {
   const handleKeyGenerate = async () => {
     if (!(await handleCheckPrime())) return;
     try {
-      const result = await ElGamalAPI.keyGenerate({ p, alpha, a });
+      console.log(p, alpha, a)
+      const result = await ElGamalAPI.keyGenerate({ p: p, alpha, a });
       setKeyResult(result);
+      console.log(result)
       setError("");
     } catch (err) {
       handleShowError("Error generating keys. Check the input values.");
@@ -106,7 +116,7 @@ const ElGamal = () => {
   const handleEncrypt = async () => {
     if (!(await handleCheckPrime())) return;
     try {
-      const result = await ElGamalAPI.encrypt({ p, alpha, a, x, k });
+      const result = await ElGamalAPI.encrypt({ "p": p, "alpha": alpha, "a": a, "x": x, "k": k });
       setEncryptedResult(result);
       setError("");
     } catch (err) {
@@ -135,12 +145,17 @@ const ElGamal = () => {
   };
 
   return (
-    <ThemeProvider theme={theme}>
     <Box sx={{ padding: 3 }}>
-      <Typography variant="h4" gutterBottom fontWeight='bold'>
+
+      <Box 
+      display="flex" 
+      justifyContent="center" 
+      alignItems="center" 
+    >
+      <Typography variant="h3" gutterBottom fontWeight="bold">
         ElGamal Cryptography
       </Typography>
-
+    </Box>
        {/* Snackbar for errors */}
        <Snackbar
         open={showSnackbar}
@@ -155,7 +170,7 @@ const ElGamal = () => {
 
       {/* Key Generate Section */}
       <Paper sx={{ padding: 3, marginBottom: 3 }}>
-        <Typography variant="h5" gutterBottom fontWeight="bold">
+        <Typography variant="h4" gutterBottom fontWeight="bold" position="relative">
           Step 1: Key Generation
         </Typography>
         <Typography variant="body1" sx={{ marginBottom: 2 }}>
@@ -175,23 +190,26 @@ const ElGamal = () => {
           <br />
           <strong>Private Key (a):</strong> a random number.
           <br />
+          <MathJax.Provider>
           <strong>Public Key (p, alpha, beta):  </strong>
-          <code>beta = alpha^a mod p</code>
+          <MathJax.Node formula={key_generate_formula} />
+          </MathJax.Provider>
         </Typography>
         <Stack spacing={2}>
           <TextField
             label="p (Prime Number)"
             type="text"
             value={p}
-            onChange={(e) => setP(e.target.value)}
+            multiline
+            onChange={(e) => { setP(e.target.value);}}
             helperText="Enter a large prime number for security."
           />
           <Stack direction="row" spacing={2} alignItems="center">
             <TextField
               label="alpha (Primitive Root)"
-              type="number"
+              type="text"
               value={alpha}
-              onChange={(e) => setAlpha(e.target.value === "" ? "" : Number(e.target.value))}
+              onChange={(e) => setAlpha(e.target.value)}
               helperText="Enter or auto-generate the primitive root."
               fullWidth
             />
@@ -203,9 +221,9 @@ const ElGamal = () => {
           <Stack direction="row" spacing={2} alignItems="center">
             <TextField
               label="a (Private Key)"
-              type="number"
+              type="text"
               value={a}
-              onChange={(e) => setA(e.target.value === "" ? "" : Number(e.target.value))}
+              onChange={(e) => setA(e.target.value)}
               helperText="Enter a random number as your private key."
               fullWidth
             />
@@ -224,9 +242,10 @@ const ElGamal = () => {
 
       {/* Encryption Section */}
       <Paper sx={{ padding: 3, marginBottom: 3 }}>
-        <Typography variant="h5" gutterBottom fontWeight='bold'>
+        <Typography variant="h4" gutterBottom fontWeight='bold'>
           Step 2: Encryption
         </Typography>
+        <MathJax.Provider>
         <Typography variant="body1" sx={{ marginBottom: 2 }}>
           To encrypt a message, we need:
           <ul>
@@ -239,10 +258,11 @@ const ElGamal = () => {
           </ul>
           The encryption is done as follows:
           <br />
-          <code>y1 = alpha^k mod p</code>
-          <br />
-          <code>y2 = (beta^k * x) mod p</code>
+          <MathJax.Node formula={encrypt_formula1}></MathJax.Node>
+          <MathJax.Node formula={encrypt_formula2}></MathJax.Node>
         </Typography>
+        </MathJax.Provider>
+        
         <Stack spacing={2}>
         <TextField
             label="message"
@@ -253,19 +273,19 @@ const ElGamal = () => {
           />
           <TextField
             label="x (Message to Encrypt)"
-            type="number"
+            type="text"
             value={x}
-            onChange={(e) => setX(e.target.value === "" ? "" : Number(e.target.value))}
+            onChange={(e) => setX(e.target.value)}
             helperText="Enter the message to encrypt."
           />
           <Button variant="contained" onClick={handleEncryptMessage}>
-            Encrypt Message
+            Encode Message
           </Button>
           <TextField
             label="k (Random Encryption Number)"
-            type="number"
+            type="text"
             value={k}
-            onChange={(e) => setK(e.target.value === "" ? "" : Number(e.target.value))}
+            onChange={(e) => setK(e.target.value)}
             helperText="Enter a random number different from previous encryption values."
           />
           <Button variant="contained" onClick={handleEncrypt}>
@@ -285,9 +305,10 @@ const ElGamal = () => {
 
       {/* Decryption Section */}
       <Paper sx={{ padding: 3 }}>
-        <Typography variant="h5" gutterBottom fontWeight='bold'>
+        <Typography variant="h4" gutterBottom fontWeight='bold'>
           Step 3: Decryption
         </Typography>
+        <MathJax.Provider>
         <Typography variant="body1" sx={{ marginBottom: 2 }}>
           To decrypt the message, we need:
           <ul>
@@ -300,8 +321,10 @@ const ElGamal = () => {
           </ul>
           The decryption is done as follows:
           <br />
-          <code>x = (y2 * (y1^(-a) mod p)) mod p</code>
+          <MathJax.Node formula={decrypt_formula}></MathJax.Node>
         </Typography>
+        </MathJax.Provider>
+       
         <Stack spacing={2}>
           <Button variant="contained" onClick={handleDecrypt}>
             Decrypt to number
@@ -322,7 +345,6 @@ const ElGamal = () => {
         )}
       </Paper>
     </Box>
-    </ThemeProvider>
   );
 };
 

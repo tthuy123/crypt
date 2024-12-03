@@ -6,6 +6,7 @@ import RSA from './pages/RSA.jsx';
 import ElGamal from './pages/Elgamal.jsx';
 import Homepage from './pages/Homepage.jsx';
 import Factors from './pages/Factors.jsx';
+import ElGamalSignature from './pages/Elgamal_Signature.jsx';
 
 import { createTheme, ThemeProvider } from "@mui/material";
 import RSA_Signature from "./pages/RSA_Signature.jsx";
@@ -32,8 +33,11 @@ const App = () => {
             <Route path="/rsa-signature" element={<RSA_Signature />} />
             <Route path="/ecc" element={<ECC />} />
             <Route path="/factors" element={<Factors />} />
+ 
             <Route path="/primality-testing" element={<Primality_check />} />
             <Route path="/generate-prime" element={<Generate_prime />} />
+
+            <Route path="/elgamal-signature" element={<ElGamalSignature />} />
           </Route>
         </Routes>
       </BrowserRouter>
