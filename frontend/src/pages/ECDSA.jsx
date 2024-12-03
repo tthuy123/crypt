@@ -5,10 +5,10 @@ import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
-import MathJax from "react-mathjax";
 import { createTheme, ThemeProvider } from "@mui/material";
 import ECCApi from "../api/modules/ecc.api";
 import ECDSAApi from "../api/modules/ecdsa.api";
+import CommonApi from "../api/modules/common.api";
 
 const theme = createTheme({
   typography: {
@@ -19,31 +19,6 @@ const theme = createTheme({
 });
 
 const ECDSA = () => {
-  // const kValidationSteps = `
-  //   1. \\textbf{Generate } k: \\\\
-  //      \\textbf{Choose a random integer k such that:} \\\\
-  //      \\[ 1 \\leq k \\leq n - 1 \\] \\\\
-  //      where n is the order of the base point G. \\\\
-  //   2. \\textbf{Calculate the Elliptic Curve Point } R: \\\\
-  //      Compute: \\\\
-  //      R = kG \\\\
-  //      Let R = (x_1, y_1), where x_1 and y_1 are the coordinates of the point R. \\\\
-  //   3. \\textbf{Check } r: \\\\
-  //      Calculate: \\\\
-  //      r = x_1 \\mod n \\\\
-  //      If r = 0, discard k and regenerate a new random integer. \\\\
-  //   4. \\textbf{Calculate the Signature Component } s: \\\\
-  //      Compute: \\\\
-  //      s = k^{-1}(z + rd) \\mod n \\\\
-  //      where z is the hash of the message, and d is the private key. If s = 0, discard k and regenerate. \\\\
-  //   5. \\textbf{Ensure } k \\textbf{ is Unique}: \\\\
-  //      k must not be reused for different messages. Reusing k can lead to private key exposure due to the mathematical relationship between multiple signatures.
-  // `;
-
-  const decryptionSteps = `
-  M = M_2 - sM_1
-`;
-
   const [error, setError] = useState("");
   const handleShowError = (message) => {
     setError(message);
@@ -51,6 +26,12 @@ const ECDSA = () => {
   const [a, setA] = useState("");
   const [b, setB] = useState("");
   const [p, setP] = useState("");
+
+  const [isPPrime, setIsPPrime] = useState(null);
+  const [isTheNumberOfCurvePointsPrime, setIsTheNumberOfCurvePointsPrime] =
+    useState(null);
+  const [theNumberOfCurvePoints, setTheNumberOfCurvePoints] = useState(null);
+
   const [generatorPointX, setGeneratorPointX] = useState("");
   const [generatorPointY, setGeneratorPointY] = useState("");
   const [n, setN] = useState(
@@ -69,7 +50,49 @@ const ECDSA = () => {
   const [k, setK] = useState("");
   const [isGeneratorPointOnCurve, setIsGeneratorPointOnCurve] = useState(null);
   const [isKValid, setIsKValid] = useState(null);
-  const satistyHasseTheorem = false;
+
+  const handleCheckIfPPrime = async () => {
+    try {
+      const result = await CommonApi.checkPrime({ n: p });
+      setIsPPrime(result.is_prime);
+      setError("");
+    } catch (err) {
+      handleShowError("Cannot check if p is prime", err.message);
+    }
+  };
+
+  const handleCheckParameters = async () => {
+    handleCheckIfPPrime();
+    handleCalculateTheNumberOfCurvePoints();
+    handleCheckIfTheNumberOfCurvePointsPrime();
+  };
+
+  const handleCalculateTheNumberOfCurvePoints = async () => {
+    try {
+      const result = await ECCApi.curve_points({ a, b, p });
+      setTheNumberOfCurvePoints(result.result);
+      setError("");
+    } catch (err) {
+      handleShowError(
+        "Cannot calculate the number of curve points",
+        err.message
+      );
+    }
+  };
+
+  const handleCheckIfTheNumberOfCurvePointsPrime = async () => {
+    try {
+      const numberOfPoints = await ECCApi.curve_points({ a, b, p });
+      const result = await CommonApi.checkPrime({ n: numberOfPoints.result });
+      setIsTheNumberOfCurvePointsPrime(result.is_prime);
+      setError("");
+    } catch (err) {
+      handleShowError(
+        "Cannot check if the number of curve points is prime",
+        err.message
+      );
+    }
+  };
 
   const handleCheckIfGeneratorPointOnCurve = async () => {
     try {
@@ -144,8 +167,8 @@ const ECDSA = () => {
   const handleSign = async () => {
     try {
       const result = await ECDSAApi.sign({
-        pX,
-        pY,
+        pX: generatorPointX,
+        pY: generatorPointY,
         a,
         b,
         p,
@@ -159,7 +182,28 @@ const ECDSA = () => {
       setS(result.signature["s"]);
 
       setError("");
-      console.log(hashedMessage);
+    } catch (err) {
+      handleShowError("Cannot hash message", err.message);
+    }
+  };
+
+  const handleVerify = async () => {
+    try {
+      const result = await ECDSAApi.verify({
+        pX: generatorPointX,
+        pY: generatorPointY,
+        a,
+        b,
+        p,
+        qX,
+        qY,
+        message,
+        r,
+        s,
+        n,
+      });
+
+      setError("");
     } catch (err) {
       handleShowError("Cannot hash message", err.message);
     }
@@ -218,16 +262,17 @@ const ECDSA = () => {
                 onChange={(e) => setP(e.target.value)}
               />
 
+              <Button variant="contained" onClick={handleCheckParameters}>
+                Check if parameters are valid:{" "}
+                {isPPrime && isTheNumberOfCurvePointsPrime ? "Yes" : "No"}
+              </Button>
               <Typography>
-                The order of the entired elliptic curve is:{" "}
-                {/* TODO: implement function to calculate order of curve */}
-                <strong>some order</strong>, which does{" "}
-                {satistyHasseTheorem ? "" : "not"} satisfy the Hasse theorem.{" "}
-                <strong>
-                  {satistyHasseTheorem
-                    ? ""
-                    : "Please choose different curve parameters."}
-                </strong>
+                The number p is: <b>{isPPrime ? "Prime" : "Not Prime"}</b>
+              </Typography>
+              <Typography>
+                The number of the points on the elliptic curve is:{" "}
+                <b>{theNumberOfCurvePoints}</b> -{" "}
+                {isTheNumberOfCurvePointsPrime ? "Prime" : "Not Prime"}
               </Typography>
             </Stack>
 
@@ -449,7 +494,17 @@ const ECDSA = () => {
                   Sign your message!
                 </Button>
                 <Typography>
-                  Your signature is {r && s ? `(${r}, ${s})` : ""}
+                  Your signature is{" "}
+                  {r && s ? (
+                    <>
+                      (r, s) ={" "}
+                      <b>
+                        ({r}, {s})
+                      </b>
+                    </>
+                  ) : (
+                    ""
+                  )}
                 </Typography>
               </Stack>
             </Stack>
@@ -459,12 +514,18 @@ const ECDSA = () => {
             </Typography>
             <Stack p={2} spacing={2}>
               <Typography>
-                The receiver can calculate the original message M using the
-                following formula:
+                To verify a signature, the verifier performs the following:
               </Typography>
-              <MathJax.Provider>
-                <MathJax.Node formula={decryptionSteps} />
-              </MathJax.Provider>
+              <Button variant="contained" onClick={handleVerify}>
+                Verify the signature!
+              </Button>
+              <Typography>
+                The signature is valid:{" "}
+                <strong>
+                  {error ? "No" : "Yes"}
+                  {error ? ` - ${error}` : ""}
+                </strong>
+              </Typography>
             </Stack>
           </Paper>
         </Stack>

@@ -65,8 +65,8 @@ def sign():
         signature = ecdsa_sign(message, k, private_key, curve)
 
         return jsonify({"signature": {
-            "r": signature[0],
-            "s": signature[1]
+            "r": str(signature[0]),
+            "s": str(signature[1])
         }})
     except ValueError:
         return jsonify({"error": "Invalid input. Parameters must be integers"}), 400
