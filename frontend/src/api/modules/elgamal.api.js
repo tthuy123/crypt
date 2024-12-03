@@ -54,6 +54,28 @@ const ElGamal = {
                 return error.response;
             }
         }
+    },
+
+    async sign(data) {
+        try {
+            const response = await Client.post("elgamal/encrypt-sig", data); // Gọi API sign
+            return response;
+        } catch (error) {
+            if (error.response) {
+                return error.response;
+            }
+        }
+    },
+
+    async verify(data) {
+        try {
+            const response = await Client.post("elgamal/check-sig", data); // Gọi API verify
+            return response;
+        } catch (error) {
+            if (error.response) {
+                return error.response;
+            }
+        }
     }
 }
 
