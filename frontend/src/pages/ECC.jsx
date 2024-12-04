@@ -213,8 +213,29 @@ const ECC = () => {
     <ThemeProvider theme={theme}>
       <Box p={5}>
         <Stack spacing={2} sx={{ padding: 3 }}>
-          <Typography variant="h4" gutterBottom>
+          <Typography textAlign="center" variant="h3" fontWeight="bold">
             Elliptic Curve Cryptography
+          </Typography>
+          <Typography component="p" gutterBottom>
+            Elliptic Curve Cryptography (ECC) is a modern approach to secure
+            communication that relies on the mathematical properties of elliptic
+            curves. Unlike traditional cryptographic systems, ECC achieves a
+            high level of security with smaller key sizes, making it both
+            efficient and powerful. This efficiency makes ECC particularly
+            suitable for environments with limited processing power, such as
+            mobile devices and embedded systems.
+          </Typography>
+          <Typography component="p" gutterBottom>
+            ECC operates on the principles of elliptic curves over finite
+            fields, utilizing points on these curves for encryption, decryption,
+            and key exchange. Its foundation is based on the Elliptic Curve
+            Discrete Logarithm Problem (ECDLP), a mathematical challenge that is
+            computationally infeasible to solve with current technology. With
+            widespread applications, including secure web communications,
+            digital signatures, and blockchain technologies, ECC has become a
+            cornerstone of modern cryptography. Its strength lies not only in
+            its compactness but also in its ability to provide robust security
+            against unauthorized access.
           </Typography>
 
           {/* Input Fields */}
