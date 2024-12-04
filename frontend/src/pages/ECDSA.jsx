@@ -9,6 +9,7 @@ import { createTheme, ThemeProvider } from "@mui/material";
 import ECCApi from "../api/modules/ecc.api";
 import ECDSAApi from "../api/modules/ecdsa.api";
 import CommonApi from "../api/modules/common.api";
+import MathJax from "react-mathjax";
 
 const theme = createTheme({
   typography: {
@@ -19,24 +20,43 @@ const theme = createTheme({
 });
 
 const ECDSA = () => {
+  const kValidationSteps1 = `
+  kG = (x_1, y_1) \\\\ 
+  r = x_1
+  `;
+
+  const kValidationSteps2 = `
+  s = k^{-1} * (h + d * r) \\\\
+  \\text{where } h = H(m) \\\\
+  `;
+
+  const verificationSteps1 = `
+  w = s^{-1} mod \\text{ } n\\\\
+  u_1 = h * w mod \\text{ } n \\\\
+  u_2 = r * w mod \\text{ } n \\\\
+  \\\\
+  u_1G + u_2Q = (x_0, y_0) \\\\
+  v = x_0 mod \\text{ } n
+  `;
   const [error, setError] = useState("");
   const handleShowError = (message) => {
     setError(message);
   };
-  const [a, setA] = useState("");
-  const [b, setB] = useState("");
-  const [p, setP] = useState("");
+  const [a, setA] = useState("3");
+  const [b, setB] = useState("6");
+  const [p, setP] = useState("6559831");
 
   const [isPPrime, setIsPPrime] = useState(null);
+  const [isNPrime, setIsNPrime] = useState(null);
   const [isTheNumberOfCurvePointsPrime, setIsTheNumberOfCurvePointsPrime] =
     useState(null);
   const [theNumberOfCurvePoints, setTheNumberOfCurvePoints] = useState(null);
 
-  const [generatorPointX, setGeneratorPointX] = useState("");
-  const [generatorPointY, setGeneratorPointY] = useState("");
+  const [generatorPointX, setGeneratorPointX] = useState("2885735");
+  const [generatorPointY, setGeneratorPointY] = useState("3280912");
   const [n, setN] = useState("");
 
-  const [d, setD] = useState("");
+  const [d, setD] = useState("947");
   const [qX, setQX] = useState("");
   const [qY, setQY] = useState("");
 
@@ -45,11 +65,21 @@ const ECDSA = () => {
   const [r, setR] = useState("");
   const [s, setS] = useState("");
 
-  const [k, setK] = useState("");
+  const [k, setK] = useState("97742");
   const [isGeneratorPointOnCurve, setIsGeneratorPointOnCurve] = useState(null);
   const [isKValid, setIsKValid] = useState(null);
 
   const [isSignatureValid, setIsSignatureValid] = useState(null);
+
+  const handleCheckIfNPrime = async () => {
+    try {
+      const result = await CommonApi.checkPrime({ n });
+      setIsNPrime(result.is_prime);
+      setError("");
+    } catch (err) {
+      handleShowError("Cannot check if n is prime", err.message);
+    }
+  };
 
   const handleCheckIfPPrime = async () => {
     try {
@@ -82,6 +112,12 @@ const ECDSA = () => {
   };
 
   useEffect(() => {
+    if (n !== "") {
+      handleCheckIfNPrime();
+    }
+  }, [n]);
+
+  useEffect(() => {
     if (theNumberOfCurvePoints !== null) {
       handleCheckIfTheNumberOfCurvePointsPrime();
     }
@@ -111,7 +147,7 @@ const ECDSA = () => {
       });
 
       setIsGeneratorPointOnCurve(result.result);
-      setTimeout(4000, setN("6557687"));
+      setTimeout(() => setN("6557687"), 4000);
       setError("");
     } catch (err) {
       handleShowError(
@@ -339,7 +375,14 @@ const ECDSA = () => {
 
               {isGeneratorPointOnCurve ? (
                 <Typography>
-                  The order of the generator point is: <strong>n = {n}</strong>
+                  The order of the generator point is:{" "}
+                  {n ? (
+                    <b>
+                      {n} - {isNPrime ? "Prime" : "Not Prime"}
+                    </b>
+                  ) : (
+                    ""
+                  )}
                 </Typography>
               ) : (
                 ""
@@ -476,10 +519,22 @@ const ECDSA = () => {
                   addition, it should also satisfy the following conditions:
                 </Typography>
                 {/* TODO: insert the conditions */}
-                {/* <MathJax.Provider>
-                  <MathJax.Node formula={kValidationSteps}/>
+                <Typography>
+                  Step 1. Choose k in range [1, n - 1]and calculate:
+                </Typography>
+                <MathJax.Provider>
+                  <MathJax.Node formula={kValidationSteps1} />
                 </MathJax.Provider>
-               */}
+
+                <Typography>Step 2.If r = 0, return to step 1.</Typography>
+
+                <Typography>Step 3. Calculate s</Typography>
+
+                <MathJax.Provider>
+                  <MathJax.Node formula={kValidationSteps2} />
+                </MathJax.Provider>
+
+                <Typography>Step 4. If s = 0, return to step 1.</Typography>
                 <TextField
                   label="Random number k"
                   fullWidth
@@ -498,6 +553,10 @@ const ECDSA = () => {
                 </Typography>
               </Stack>
               <Stack p={2} spacing={2}>
+                <Typography>
+                  After generating a random number k, the signer calculates the
+                  signature (r, s) as follows:
+                </Typography>
                 <Button variant="contained" onClick={handleSign}>
                   Sign your message!
                 </Button>
@@ -523,6 +582,14 @@ const ECDSA = () => {
             <Stack p={2} spacing={2}>
               <Typography>
                 To verify a signature, the verifier performs the following:
+              </Typography>
+
+              <MathJax.Provider>
+                <MathJax.Node formula={verificationSteps1} />
+              </MathJax.Provider>
+
+              <Typography>
+                The signature is valid if and only if<b> r = v</b>.
               </Typography>
               <Button variant="contained" onClick={handleVerify}>
                 Verify the signature!
