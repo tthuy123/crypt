@@ -9,9 +9,10 @@ def create_app():
     app.config.from_object('config.Config')
 
     # Import và đăng ký Blueprint (API modules) với prefix '/api'
-    from app.routes import elgamal, common, ecc 
+    from app.routes import elgamal, common, ecc, ecdsa
     app.register_blueprint(ecc.bp)
     app.register_blueprint(elgamal.bp)
     app.register_blueprint(common.bp)
+    app.register_blueprint(ecdsa.bp)
 
     return app

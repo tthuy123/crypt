@@ -1,8 +1,26 @@
 from flask import Blueprint, request, jsonify
-# from app.services.math_utils import prime_factors, find_primitive_element
-from app.services.ecc import point_add, scalar_multiply, is_on_curve, ecc_encrypt, ecc_decrypt, ecc_generate_keypair
+from app.services.ecc import point_add, scalar_multiply, is_on_curve, ecc_encrypt, ecc_decrypt, ecc_generate_keypair, count_points_on_curve_with_prime_modulo
 
 bp = Blueprint('ecc', __name__, url_prefix='/api/ecc')
+
+@bp.route('/count-point', methods=['POST'])
+def count_points():
+    data = request.json
+    required_params = ['a', 'b', 'p']
+
+    for param in required_params:
+        if param not in data:
+            return jsonify({"error": f"Missing parameter: {param}"}), 400
+
+    try:
+        a, b, p = (int(data['a']), int(data['b']), int(data['p']))
+        result = count_points_on_curve_with_prime_modulo(p, a, b)
+        return jsonify({"result": result})
+    except ValueError:
+        return jsonify({"error": "Invalid input. Parameters must be integers"}), 400
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 @bp.route('/point-add', methods=['POST'])
 def add_points():
@@ -19,8 +37,8 @@ def add_points():
         curve = (int(data['a']), int(data['b']), int(data['p']))
         result = point_add(P=P, Q=Q, curve=curve)
         return jsonify({"result": {
-            "x": result[0],
-            "y": result[1]
+            "x": str(result[0]),
+            "y": str(result[1])
         }})
     except ValueError:
         return jsonify({"error": "Invalid input. Parameters must be integers"}), 400
@@ -40,8 +58,8 @@ def multiply_point():
         curve = (int(data['a']), int(data['b']), int(data['p']))
         result = scalar_multiply(k=k, P=P, curve=curve)
         return jsonify({"result": {
-            "x": result[0],
-            "y": result[1]
+            "x": str(result[0]),
+            "y": str(result[1])
         }})
     except ValueError:
         return jsonify({"error": "Invalid input. Parameters must be integers"}), 400
@@ -79,22 +97,22 @@ def generate_keypair():
         result = ecc_generate_keypair(P, s, curve)
         return jsonify({"result": {
             "private_key": {
-                "s": result[0][0],
-                "pX": result[0][1][0],
-                "pY": result[0][1][1],
-                "a": result[0][2][0],
-                "b": result[0][2][1],
-                "p": result[0][2][2]
+                "s": str(result[0][0]),
+                "pX": str(result[0][1][0]),
+                "pY": str(result[0][1][1]),
+                "a": str(result[0][2][0]),
+                "b": str(result[0][2][1]),
+                "p": str(result[0][2][2])
                 
             },
             "public_key": {
-                "pX": result[1][0][0],
-                "pY": result[1][0][1],
-                "bX": result[1][1][0],
-                "bY": result[1][1][1],
-                "a": result[1][2][0],
-                "b": result[1][2][1],
-                "p": result[1][2][2]
+                "pX": str(result[1][0][0]),
+                "pY": str(result[1][0][1]),
+                "bX": str(result[1][1][0]),
+                "bY": str(result[1][1][1]),
+                "a": str(result[1][2][0]),
+                "b": str(result[1][2][1]),
+                "p": str(result[1][2][2])
             }
         }
         })
@@ -116,10 +134,10 @@ def encrypt():
         public_key = ((int(data['pX']), int(data['pY'])), (int(data['bX']), int(data['bY'])), (int(data['a']), int(data['b']), int(data['p'])))
         result = ecc_encrypt(M, k, public_key)
         return jsonify({"result": {
-            "m1X": result[0][0],
-            "m1Y": result[0][1],
-            "m2X": result[1][0],
-            "m2Y": result[1][1]
+            "m1X": str(result[0][0]),
+            "m1Y": str(result[0][1]),
+            "m2X": str(result[1][0]),
+            "m2Y": str(result[1][1])
         }})
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
@@ -140,9 +158,43 @@ def decrypt():
         private_key = (int(data['s']), (int(data['pX']), int(data['pY'])), (int(data['a']), int(data['b']), int(data['p'])))
         result = ecc_decrypt((M1, M2), private_key)
         return jsonify({"result": {
-            "x": result[0],
-            "y": result[1]
+            "x": str(result[0]),
+            "y": str(result[1])
         }})
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     
+
+def legendre(A: int, B: int):
+    if B % 2 == 0:
+        raise RuntimeError(f"invalid B = {B}")
+
+    if B == 1:
+        return 1
+
+    if A % B == 0:
+        return 0
+
+    if A == 1:
+        return 1
+
+    r = pow(A % B, (B - 1) // 2, B)
+    if r == 1:
+        return 1
+    elif r == B - 1:
+        return -1
+    else:
+        return 0
+
+def count_points_on_curve_with_prime_modulo(p: int, a: int, b: int) -> int:
+    count = 0
+    for x in range(p):
+        y2 = (x**3 + a*x + b) % p
+        if y2 == 0:
+            count += 1
+            continue
+        j = legendre(y2, p)
+        if j == 1:
+            count += 2
+    count += 1
+    return count
