@@ -46,11 +46,11 @@ const Homepage = () => {
       link: "/elgamal-signature" // Thêm link tương ứng cho mỗi hình chữ ký
     },
     {
-      title: "Elliptic Curve Signature",
+      title: "ECDSA",
       description:
         "Explore elliptic curve-based digital signatures for more secure cryptographic methods.",
       color: "orange",
-      link: "/ecc-signature" // Thêm link tương ứng cho mỗi hình chữ ký
+      link: "/ecdsa" // Thêm link tương ứng cho mỗi hình chữ ký
     },
   ];
 
