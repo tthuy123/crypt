@@ -8,7 +8,6 @@ import Box from "@mui/material/Box";
 import MathJax from "react-mathjax";
 import { createTheme, ThemeProvider } from "@mui/material";
 import ECCApi from "../api/modules/ecc.api";
-import ECDSAApi from "../api/modules/ecdsa.api";
 import CommonApi from "../api/modules/common.api";
 
 const theme = createTheme({
@@ -32,13 +31,12 @@ const ECC = () => {
   const handleShowError = (message) => {
     setError(message);
   };
-  const [a, setA] = useState("");
-  const [b, setB] = useState("");
-  const [p, setP] = useState("");
-  const [generatorPointX, setGeneratorPointX] = useState("");
-  const [generatorPointY, setGeneratorPointY] = useState("");
+  const [a, setA] = useState("3");
+  const [b, setB] = useState("6");
+  const [p, setP] = useState("6559831");
+  const [generatorPointX, setGeneratorPointX] = useState("2885735");
+  const [generatorPointY, setGeneratorPointY] = useState("3280912");
   const [message, setMessage] = useState("");
-  const [messageK, setMessageK] = useState("");
 
   const [senderPointX, setSenderPointX] = useState("");
   const [senderPointY, setSenderPointY] = useState("");
@@ -48,7 +46,7 @@ const ECC = () => {
   const [m1Y, setM1Y] = useState("");
   const [m2X, setM2X] = useState("");
   const [m2Y, setM2Y] = useState("");
-  const [k, setK] = useState("");
+  const [k, setK] = useState("97742");
   const [decryptedPointX, setDecryptedPointX] = useState("");
   const [decryptedPointY, setDecryptedPointY] = useState("");
   const [isGeneratorPointOnCurve, setIsGeneratorPointOnCurve] = useState(null);
@@ -145,23 +143,6 @@ const ECC = () => {
     }
   };
 
-  const handleCheckIfSenderPointOnCurve = async () => {
-    try {
-      const result = await ECCApi.isPointOnCurve({
-        a,
-        b,
-        p,
-        pX: senderPointX,
-        pY: senderPointY,
-      });
-
-      setIsSenderPointOnCurve(result.result);
-      setError("");
-    } catch (err) {
-      handleShowError("Cannot check if point is on curve", err.message);
-    }
-  };
-
   const handleCalculateP = async () => {
     try {
       const result = await ECCApi.pointMultiply({
@@ -227,7 +208,7 @@ const ECC = () => {
     }
   };
 
-  const [s, setS] = useState(null);
+  const [s, setS] = useState("947");
   return (
     <ThemeProvider theme={theme}>
       <Box p={5}>
@@ -321,7 +302,7 @@ const ECC = () => {
                 Check if this point is on the curve.
               </Button>
               <Typography>
-                The sender point is on the curve:{" "}
+                The generator point is on the curve:{" "}
                 <strong>
                   {isGeneratorPointOnCurve !== null
                     ? isGeneratorPointOnCurve
@@ -447,16 +428,6 @@ const ECC = () => {
               <Button variant="contained" onClick={handleCalculateSenderPoint}>
                 Generate Message Point
               </Button>
-              <Typography>
-                The sender point is on the curve:{" "}
-                <strong>
-                  {isSenderPointOnCurve !== null
-                    ? isSenderPointOnCurve
-                      ? "Yes"
-                      : "No"
-                    : ""}
-                </strong>
-              </Typography>
             </Stack>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
               Step 4.1: Generate a random number k.
