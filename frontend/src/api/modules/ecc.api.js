@@ -54,8 +54,18 @@ const ECC = {
         return error.response;
       }
     }
-  }
+  },
   
+  async curve_points(data) {
+    try {
+      const response = await Client.post("ecc/count-point", data); 
+      return response;
+    } catch (error) {
+      if (error.response) {
+        return error.response;
+      }
+    }
+  }
 };
 
 export default ECC;

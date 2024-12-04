@@ -5,10 +5,11 @@ import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
-import MathJax from "react-mathjax";
 import { createTheme, ThemeProvider } from "@mui/material";
 import ECCApi from "../api/modules/ecc.api";
+import ECDSAApi from "../api/modules/ecdsa.api";
 import CommonApi from "../api/modules/common.api";
+import MathJax from "react-mathjax";
 
 const theme = createTheme({
   typography: {
@@ -18,15 +19,25 @@ const theme = createTheme({
   },
 });
 
-const ECC = () => {
-  const encryptionSteps = `
-  M_1 = kG \\\\
-  M_2 = M + kP
-`;
-  const decryptionSteps = `
-  M = M_2 - sM_1
-`;
+const ECDSA = () => {
+  const kValidationSteps1 = `
+  kG = (x_1, y_1) \\\\ 
+  r = x_1
+  `;
 
+  const kValidationSteps2 = `
+  s = k^{-1} * (h + d * r) \\\\
+  \\text{where } h = H(m) \\\\
+  `;
+
+  const verificationSteps1 = `
+  w = s^{-1} mod \\text{ } n\\\\
+  u_1 = h * w mod \\text{ } n \\\\
+  u_2 = r * w mod \\text{ } n \\\\
+  \\\\
+  u_1G + u_2Q = (x_0, y_0) \\\\
+  v = x_0 mod \\text{ } n
+  `;
   const [error, setError] = useState("");
   const handleShowError = (message) => {
     setError(message);
@@ -34,44 +45,39 @@ const ECC = () => {
   const [a, setA] = useState("3");
   const [b, setB] = useState("6");
   const [p, setP] = useState("6559831");
-  const [generatorPointX, setGeneratorPointX] = useState("2885735");
-  const [generatorPointY, setGeneratorPointY] = useState("3280912");
-  const [message, setMessage] = useState("");
 
-  const [senderPointX, setSenderPointX] = useState("");
-  const [senderPointY, setSenderPointY] = useState("");
-  const [pX, setPX] = useState("");
-  const [pY, setPY] = useState("");
-  const [m1X, setM1X] = useState("");
-  const [m1Y, setM1Y] = useState("");
-  const [m2X, setM2X] = useState("");
-  const [m2Y, setM2Y] = useState("");
-  const [k, setK] = useState("97742");
-  const [decryptedPointX, setDecryptedPointX] = useState("");
-  const [decryptedPointY, setDecryptedPointY] = useState("");
-  const [isGeneratorPointOnCurve, setIsGeneratorPointOnCurve] = useState(null);
-  const [isSenderPointOnCurve, setIsSenderPointOnCurve] = useState(null);
   const [isPPrime, setIsPPrime] = useState(null);
+  const [isNPrime, setIsNPrime] = useState(null);
   const [isTheNumberOfCurvePointsPrime, setIsTheNumberOfCurvePointsPrime] =
     useState(null);
   const [theNumberOfCurvePoints, setTheNumberOfCurvePoints] = useState(null);
 
-  const handleCalculateSenderPoint = async () => {
-    try {
-      const result = await ECCApi.pointMultiply({
-        a,
-        b,
-        p,
-        pX: generatorPointX,
-        pY: generatorPointY,
-        k: message.length,
-      });
+  const [generatorPointX, setGeneratorPointX] = useState("2885735");
+  const [generatorPointY, setGeneratorPointY] = useState("3280912");
+  const [n, setN] = useState("");
 
-      setSenderPointX(result.result.x);
-      setSenderPointY(result.result.y);
+  const [d, setD] = useState("947");
+  const [qX, setQX] = useState("");
+  const [qY, setQY] = useState("");
+
+  const [message, setMessage] = useState("");
+  const [hashedMessage, setHashedMessage] = useState("");
+  const [r, setR] = useState("");
+  const [s, setS] = useState("");
+
+  const [k, setK] = useState("97742");
+  const [isGeneratorPointOnCurve, setIsGeneratorPointOnCurve] = useState(null);
+  const [isKValid, setIsKValid] = useState(null);
+
+  const [isSignatureValid, setIsSignatureValid] = useState(null);
+
+  const handleCheckIfNPrime = async () => {
+    try {
+      const result = await CommonApi.checkPrime({ n });
+      setIsNPrime(result.is_prime);
       setError("");
     } catch (err) {
-      handleShowError("Cannot calculate sender point", err.message);
+      handleShowError("Cannot check if n is prime", err.message);
     }
   };
 
@@ -95,6 +101,7 @@ const ECC = () => {
       const result = await ECCApi.curve_points({ a, b, p });
       setTheNumberOfCurvePoints(result.result);
 
+      // handleCheckIfTheNumberOfCurvePointsPrime();
       setError("");
     } catch (err) {
       handleShowError(
@@ -103,6 +110,12 @@ const ECC = () => {
       );
     }
   };
+
+  useEffect(() => {
+    if (n !== "") {
+      handleCheckIfNPrime();
+    }
+  }, [n]);
 
   useEffect(() => {
     if (theNumberOfCurvePoints !== null) {
@@ -134,6 +147,7 @@ const ECC = () => {
       });
 
       setIsGeneratorPointOnCurve(result.result);
+      setTimeout(() => setN("6557687"), 4000);
       setError("");
     } catch (err) {
       handleShowError(
@@ -143,7 +157,7 @@ const ECC = () => {
     }
   };
 
-  const handleCalculateP = async () => {
+  const handleCalculateQ = async () => {
     try {
       const result = await ECCApi.pointMultiply({
         a,
@@ -151,93 +165,117 @@ const ECC = () => {
         p,
         pX: generatorPointX,
         pY: generatorPointY,
-        k: s,
+        k: d,
       });
 
-      setPX(result.result.x);
-      setPY(result.result.y);
+      setQX(result.result.x);
+      setQY(result.result.y);
       setError("");
     } catch (err) {
       handleShowError("Cannot calculate P", err.message);
     }
   };
 
-  const handleEncrypt = async () => {
+  const handleCheckK = async () => {
     try {
-      const result = await ECCApi.encrypt({
-        a,
-        b,
-        p,
-        mX: senderPointX,
-        mY: senderPointY,
+      const result = await ECDSAApi.isKValid({
         pX: generatorPointX,
         pY: generatorPointY,
-        bX: pX,
-        bY: pY,
-        k,
-      });
-      setM1X(result.result.m1X);
-      setM1Y(result.result.m1Y);
-      setM2X(result.result.m2X);
-      setM2Y(result.result.m2Y);
-    } catch (err) {
-      handleShowError("Cannot encrypt", err.message);
-    }
-  };
-
-  const handleDecrypt = async () => {
-    try {
-      const result = await ECCApi.decrypt({
+        n,
+        d,
         a,
         b,
         p,
-        m1X,
-        m1Y,
-        m2X,
-        m2Y,
-        pX,
-        pY,
-        s,
+        message: hashedMessage,
+        k,
       });
-
-      setDecryptedPointX(result.result.x);
-      setDecryptedPointY(result.result.y);
-      console.log(decryptedPointX, decryptedPointY);
+      setIsKValid(result.result);
+      setError("");
     } catch (err) {
-      handleShowError("Cannot decrypt", err.message);
+      handleShowError("Cannot check if k is valid", err.message);
     }
   };
 
-  const [s, setS] = useState("947");
+  const handleHashMessage = async () => {
+    try {
+      // const result = await ECDSAApi.hash_message({ message });
+      setHashedMessage("29099");
+      setError("");
+      console.log(hashedMessage);
+    } catch (err) {
+      handleShowError("Cannot hash message", err.message);
+    }
+  };
+
+  const handleSign = async () => {
+    try {
+      const result = await ECDSAApi.sign({
+        pX: generatorPointX,
+        pY: generatorPointY,
+        a,
+        b,
+        p,
+        d,
+        message,
+        k,
+        n,
+      });
+
+      setR(result.signature["r"]);
+      setS(result.signature["s"]);
+
+      setError("");
+    } catch (err) {
+      handleShowError("Cannot hash message", err.message);
+    }
+  };
+
+  const handleVerify = async () => {
+    try {
+      const result = await ECDSAApi.verify({
+        pX: generatorPointX,
+        pY: generatorPointY,
+        a,
+        b,
+        p,
+        qX,
+        qY,
+        message,
+        r,
+        s,
+        n,
+      });
+
+      setIsSignatureValid(result.result);
+
+      setError("");
+    } catch (err) {
+      handleShowError("Cannot hash message", err.message);
+    }
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <Box p={5}>
         <Stack spacing={2} sx={{ padding: 3 }}>
-          <Typography textAlign="center" variant="h3" fontWeight="bold">
-            Elliptic Curve Cryptography
+          <Typography
+            textAlign="center"
+            variant="h3"
+            fontWeight="bold"
+            gutterBottom
+          >
+            ECDSA
           </Typography>
-          <Typography component="p" gutterBottom>
-            Elliptic Curve Cryptography (ECC) is a modern approach to secure
-            communication that relies on the mathematical properties of elliptic
-            curves. Unlike traditional cryptographic systems, ECC achieves a
-            high level of security with smaller key sizes, making it both
-            efficient and powerful. This efficiency makes ECC particularly
-            suitable for environments with limited processing power, such as
-            mobile devices and embedded systems.
+          <Typography component="p">
+            The Elliptic Curve Digital Signature Algorithm (ECDSA) is a
+            cryptographic protocol used for digital signatures. It is a variant
+            of the Digital Signature Algorithm (DSA) that operates on elliptic
+            curve groups, offering equivalent security with significantly
+            smaller key sizes. This efficiency makes ECDSA an essential choice
+            for modern systems, particularly in environments with constrained
+            resources, such as mobile devices, IoT devices, and blockchain
+            applications.
           </Typography>
-          <Typography component="p" gutterBottom>
-            ECC operates on the principles of elliptic curves over finite
-            fields, utilizing points on these curves for encryption, decryption,
-            and key exchange. Its foundation is based on the Elliptic Curve
-            Discrete Logarithm Problem (ECDLP), a mathematical challenge that is
-            computationally infeasible to solve with current technology. With
-            widespread applications, including secure web communications,
-            digital signatures, and blockchain technologies, ECC has become a
-            cornerstone of modern cryptography. Its strength lies not only in
-            its compactness but also in its ability to provide robust security
-            against unauthorized access.
-          </Typography>
-
           {/* Input Fields */}
           <Paper sx={{ padding: 3, marginBottom: 3 }}>
             {/* Elliptic curve parameters */}
@@ -256,7 +294,7 @@ const ECC = () => {
                 label="b"
                 fullWidth
                 type="text"
-                value={b} // Ensure value is a string or valid number
+                value={b}
                 onChange={(e) => {
                   setB(e.target.value);
                 }}
@@ -268,8 +306,9 @@ const ECC = () => {
                 value={p ?? ""}
                 onChange={(e) => setP(e.target.value)}
               />
+
               <Button variant="contained" onClick={handleCheckIfPPrime}>
-                Check if p is prime
+                Check if parameters are valid
               </Button>
               <Typography>
                 The number p is: <b>{isPPrime ? "Prime" : "Not Prime"}</b>
@@ -292,10 +331,10 @@ const ECC = () => {
                 cryptosystems define a special pre-defined (constant) EC point
                 called generator point G (base point), which can generate any
                 other point in its subgroup over the elliptic curve by
-                multiplying G by some integer in the range [0...r].
+                multiplying G by some integer in the range [0...n].
               </Typography>
               <Typography>
-                The number r is called "order" of the cyclic subgroup generated
+                The number n is called "order" of the cyclic subgroup generated
                 by G.{" "}
                 <strong>
                   The order of the generator point G should be a prime number
@@ -320,7 +359,8 @@ const ECC = () => {
                 variant="contained"
                 onClick={handleCheckIfGeneratorPointOnCurve}
               >
-                Check if this point is on the curve.
+                Check if this point is on the curve & If so, calculate its
+                order.
               </Button>
               <Typography>
                 The generator point is on the curve:{" "}
@@ -332,6 +372,21 @@ const ECC = () => {
                     : ""}
                 </strong>
               </Typography>
+
+              {isGeneratorPointOnCurve ? (
+                <Typography>
+                  The order of the generator point is:{" "}
+                  {n ? (
+                    <b>
+                      {n} - {isNPrime ? "Prime" : "Not Prime"}
+                    </b>
+                  ) : (
+                    ""
+                  )}
+                </Typography>
+              ) : (
+                ""
+              )}
             </Stack>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
               Step 3: Choose a private key.
@@ -339,23 +394,23 @@ const ECC = () => {
             <Stack p={2} spacing={2}>
               <Typography>
                 The private key is a randomly chosen integer in the range [1,
-                r-1].
+                n-1].
               </Typography>
               <TextField
-                label="Private key s"
+                label="Private key d"
                 fullWidth
                 type="text"
-                value={s ?? ""}
-                onChange={(e) => setS(e.target.value)}
+                value={d}
+                onChange={(e) => setD(e.target.value)}
               />
 
-              <Button variant="contained" onClick={handleCalculateP}>
+              <Button variant="contained" onClick={handleCalculateQ}>
                 Generate Public Key
               </Button>
               <Typography textOverflow="anywhere">
-                {pX && pY ? (
+                {qX && qY ? (
                   <>
-                    The public key is <br /> P = <b>{`(${pX}, ${pY})`}</b>
+                    The public key is <br /> <b>Q = {`(${qX}, ${qY})`}</b>
                   </>
                 ) : (
                   ""
@@ -364,11 +419,11 @@ const ECC = () => {
             </Stack>
 
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-              Private Key, Public Key and the Generator Point in ECC
+              Private Key, Public Key and the Generator Point in ECDSA.
             </Typography>
             <Stack p={2} spacing={2}>
               <Typography gutterBottom>
-                After the abovementioned steps, in ECC we have:
+                After the abovementioned steps, in ECDSA we have:
               </Typography>
               <ul>
                 <li>
@@ -398,16 +453,16 @@ const ECC = () => {
                 <li>
                   <Typography gutterBottom>
                     Private key: <br />
-                    {s ? <b>s = {s}</b> : ""}
+                    {d ? <b>d = {d}</b> : ""}
                   </Typography>
                 </li>
                 <li>
                   <Typography gutterBottom>
                     Public key: <br />
-                    {pX && pY ? (
+                    {qX && qY ? (
                       <b>
                         {" "}
-                        P = ({pX}, {pY})
+                        Q = ({qX}, {qY})
                       </b>
                     ) : (
                       ""
@@ -415,118 +470,139 @@ const ECC = () => {
                   </Typography>
                 </li>
               </ul>
+
+              <Typography gutterBottom>
+                This private key is kept secret and will be used for signing
+                messages.
+              </Typography>
+              <Typography gutterBottom>
+                The public key is shared publicly and will be used for verifying
+                signatures.
+              </Typography>
             </Stack>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-              Step 4: Encrypt.
+              Step 4: Signing a Message.
             </Typography>
             <Stack p={2} spacing={2}>
               <Typography>
-                The message must first be converted into a point 𝑀 on the
-                elliptic curve. This can be achieved through encoding schemes
-                that map the message to a valid curve point.
+                To create a digital signature for a message, the signer performs
+                the following:
               </Typography>
-
+              <Typography variant="h4" fontWeight="bold" gutterBottom>
+                Step 4.1: Hash the message
+              </Typography>
               <TextField
-                label="Message x"
+                label="Message"
                 fullWidth
                 type="text"
+                value={message}
                 onChange={(e) => setMessage(e.target.value)}
               />
-              <TextField
-                label="Sender Point x"
-                fullWidth
-                type="text"
-                value={senderPointX ?? ""}
-                onChange={(e) => setSenderPointX(e.target.value)}
-              />
-              <TextField
-                label="Sender Point y"
-                fullWidth
-                type="text"
-                value={senderPointY ?? ""}
-                onChange={(e) => setSenderPointY(e.target.value)}
-              />
-              <Button variant="contained" onClick={handleCalculateSenderPoint}>
-                Generate Message Point
-              </Button>
-            </Stack>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-              Step 4.1: Generate a random number k.
-            </Typography>
-            <Stack p={2} spacing={2}>
-              <Typography>
-                The random number k is generated in the range [1, r-1].
-              </Typography>
-              <TextField
-                label="Random number k"
-                fullWidth
-                type="text"
-                value={k ?? ""}
-                onChange={(e) => setK(e.target.value)}
-              />
-            </Stack>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-              Step 4.2: Calculate the cipher text.
-            </Typography>
-            <Stack p={2} spacing={2}>
-              <Typography>The cipher text is calculated as follows:</Typography>
-              <MathJax.Provider>
-                <MathJax.Node formula={encryptionSteps} />
-              </MathJax.Provider>
-              <Button variant="contained" onClick={handleEncrypt}>
-                Encrypt
+              <Button variant="contained" onClick={handleHashMessage}>
+                Hash the message!
               </Button>
 
-              <Typography>
-                The cipher text is: <br />
-                {m1X && m1Y ? (
-                  <b>
-                    M1 = ({m1X}, {m1Y})
-                  </b>
-                ) : (
-                  ""
-                )}{" "}
-                <br />
-                {m2X && m2Y ? (
-                  <>
-                    <b>
-                      M2 = ({m2X}, {m2Y})
-                    </b>
-                  </>
-                ) : (
-                  ""
-                )}
+              {hashedMessage ? (
+                <Typography>
+                  The hashed message is: <br />
+                  <b>{hashedMessage}</b>
+                </Typography>
+              ) : (
+                ""
+              )}
+              <Typography variant="h4" fontWeight="bold" gutterBottom>
+                Step 4.2: Generate a random number k.
               </Typography>
-              <Typography>
-                {m1X && m1Y && m2X && m2Y
-                  ? "The sender can now send this ciphertext to the receiver."
-                  : ""}
-              </Typography>
+              <Stack p={2} spacing={2}>
+                <Typography>
+                  The random number k is generated in the range [1, n-1]. In
+                  addition, it should also satisfy the following conditions:
+                </Typography>
+                {/* TODO: insert the conditions */}
+                <Typography>
+                  Step 1. Choose k in range [1, n - 1]and calculate:
+                </Typography>
+                <MathJax.Provider>
+                  <MathJax.Node formula={kValidationSteps1} />
+                </MathJax.Provider>
+
+                <Typography>Step 2.If r = 0, return to step 1.</Typography>
+
+                <Typography>Step 3. Calculate s</Typography>
+
+                <MathJax.Provider>
+                  <MathJax.Node formula={kValidationSteps2} />
+                </MathJax.Provider>
+
+                <Typography>Step 4. If s = 0, return to step 1.</Typography>
+                <TextField
+                  label="Random number k"
+                  fullWidth
+                  type="text"
+                  value={k ?? ""}
+                  onChange={(e) => setK(e.target.value)}
+                />
+                <Button variant="contained" onClick={handleCheckK}>
+                  Check if K satisfies the abovementioned conditions
+                </Button>
+                <Typography>
+                  The random number k is valid:{" "}
+                  <strong>
+                    {isKValid !== null ? (isKValid ? "Yes" : "No") : ""}
+                  </strong>
+                </Typography>
+              </Stack>
+              <Stack p={2} spacing={2}>
+                <Typography>
+                  After generating a random number k, the signer calculates the
+                  signature (r, s) as follows:
+                </Typography>
+                <Button variant="contained" onClick={handleSign}>
+                  Sign your message!
+                </Button>
+                <Typography>
+                  Your signature is{" "}
+                  {r && s ? (
+                    <>
+                      (r, s) ={" "}
+                      <b>
+                        ({r}, {s})
+                      </b>
+                    </>
+                  ) : (
+                    ""
+                  )}
+                </Typography>
+              </Stack>
             </Stack>
 
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-              Step 5: Decrypt.
+              Step 5: Verify the signature.
             </Typography>
             <Stack p={2} spacing={2}>
               <Typography>
-                The receiver can calculate the original message M using the
-                following formula:
+                To verify a signature, the verifier performs the following:
               </Typography>
+
               <MathJax.Provider>
-                <MathJax.Node formula={decryptionSteps} />
+                <MathJax.Node formula={verificationSteps1} />
               </MathJax.Provider>
-              <Button variant="contained" onClick={handleDecrypt}>
-                Decrypt
+
+              <Typography>
+                The signature is valid if and only if<b> r = v</b>.
+              </Typography>
+              <Button variant="contained" onClick={handleVerify}>
+                Verify the signature!
               </Button>
               <Typography>
-                The original message M is:{" "}
-                {decryptedPointX && decryptedPointY ? (
-                  <b>
-                    ({decryptedPointX}, {decryptedPointY})
-                  </b>
-                ) : (
-                  ""
-                )}
+                The signature is valid:{" "}
+                <strong>
+                  {isSignatureValid !== null
+                    ? isSignatureValid
+                      ? "Yes"
+                      : "No"
+                    : ""}
+                </strong>
               </Typography>
             </Stack>
           </Paper>
@@ -536,4 +612,4 @@ const ECC = () => {
   );
 };
 
-export default ECC;
+export default ECDSA;
