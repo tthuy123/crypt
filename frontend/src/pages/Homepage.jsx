@@ -59,7 +59,7 @@ const Homepage = () => {
       title: "Factorization",
       description:
         "Factorization is the process of finding prime numbers that multiply together to get the original number.",
-      color: "cyan",
+      color: "pink",
       link: "/factors", // Thêm link tương ứng cho mỗi thuật toán liên quan
     },
     {
@@ -199,7 +199,7 @@ const Homepage = () => {
                   color: algorithm.color,
                 }}
               >
-                Learn More
+                Try Now
               </Button>
             </Link>
           </Box>
