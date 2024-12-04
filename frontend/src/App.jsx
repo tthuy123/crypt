@@ -4,6 +4,7 @@ import Layout from "./components/Layout.jsx"; // Import Layout component
 import ECC from "./pages/ECC.jsx";
 import RSA from "./pages/RSA.jsx";
 import ElGamal from "./pages/Elgamal.jsx";
+import ElGamalSignature from "./pages/Elgamal_Signature.jsx";
 import ECDSA from "./pages/ECDSA.jsx";
 import Homepage from "./pages/Homepage.jsx";
 import Factors from "./pages/Factors.jsx";
