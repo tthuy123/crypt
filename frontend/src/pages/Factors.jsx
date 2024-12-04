@@ -19,7 +19,7 @@ const Factors = () => {
     setError("");
 
     try {
-      const data = { n: Number(number) }; // Sending number as `n` in the API request
+      const data = { n: number }; // Sending number as `n` in the API request
       const response = await ElGamalAPI.factors(data);
       console.log(response);
 
@@ -55,7 +55,7 @@ const Factors = () => {
         fullWidth
         value={number}
         onChange={(e) => setNumber(e.target.value)}
-        type="number"
+        type="text"
       />
       <Button
         variant="contained"
