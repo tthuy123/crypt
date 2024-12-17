@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.services.ecc import point_add, scalar_multiply, is_on_curve, ecc_encrypt, ecc_decrypt, ecc_generate_keypair, count_points_on_curve_with_prime_modulo
+from app.services.ecc import point_add, scalar_multiply, is_on_curve, ecc_encrypt, ecc_decrypt, ecc_generate_keypair, count_points_on_curve_with_prime_modulo, get_point_from_message
 
 bp = Blueprint('ecc', __name__, url_prefix='/api/ecc')
 
@@ -186,15 +186,22 @@ def legendre(A: int, B: int):
     else:
         return 0
 
-def count_points_on_curve_with_prime_modulo(p: int, a: int, b: int) -> int:
-    count = 0
-    for x in range(p):
-        y2 = (x**3 + a*x + b) % p
-        if y2 == 0:
-            count += 1
-            continue
-        j = legendre(y2, p)
-        if j == 1:
-            count += 2
-    count += 1
-    return count
+@bp.route('/get-message-point', methods=['POST'])
+def get_message_point():
+    data = request.json
+    required_params = ['message', 'a', 'b', 'p']
+
+    for param in required_params:
+        if param not in data:
+            return jsonify({"error": f"Missing parameter: {param}"}), 400
+
+    try:
+        message = int(data['message'])
+        curve = (int(data['a']), int(data['b']), int(data['p']))
+        result = get_point_from_message(message, curve)
+        return jsonify({"result": {
+            "x": str(result[0]),
+            "y": str(result[1])
+        }})
+    except ValueError:
+        return jsonify({"error": "Invalid input. Parameters must be integers"}), 400

@@ -157,6 +157,24 @@ def ecc_generate_keypair(P, s, curve):
     
     return (s, P, curve), (P, B, curve)
 
+def get_point_from_message(message, curve):
+    """
+    Convert a message to a point on the curve
+
+    Args:
+        message: Message to convert
+        curve: Curve parameters (a, b, p)
+
+    Returns:
+        tuple: Point on the curve
+    """
+    p = curve[2]
+    x = message % p
+    y = cipolla(elliptic_func(x, *curve), p)[0]
+    if y is None:
+        return get_point_from_message(message + 1, curve)
+    return x, y
+
 def ecc_encrypt(M, k, public_key):
     """
     ECC encryption
@@ -224,6 +242,16 @@ def ecdsa_generate_keypair(P, n, d, curve):
     return (P, n, d, curve), (P, Q, n, curve)
 
 def is_valid_k(k, message, private_key, curve):
+    """
+    Check if a given k is valid for ECDSA
+    Args:
+        k: A given k
+        message: Message to sign
+        private_key: A tuple of private key parameters
+        curve: Curve parameters (a, b, p)
+    Returns:
+        A boolean indicating if the k is valid    
+    """
     P, n, d, _ = private_key
     kG = scalar_multiply(k, P, curve)
 
@@ -242,6 +270,17 @@ def is_valid_k(k, message, private_key, curve):
     return True
     
 def ecdsa_sign(message, k, private_key, curve):
+    """
+    Sign a message using ECDSA, with a given valid k
+    Args:
+        message: Message to sign
+        k: A valid k
+        private_key: A tuple of private key parameters
+        curve: Curve parameters (a, b, p)
+    Returns:
+        A tuple of signature (r, s)
+
+    """
     P, n, d, _ = private_key
     kG = scalar_multiply(k, P, curve)
 
@@ -252,36 +291,6 @@ def ecdsa_sign(message, k, private_key, curve):
     s = (multiplicative_inverse(n, k) * (h + r * d)) % n
 
     return r, s
-
-# def ecdsa_sign(message, private_key, curve):
-#     """
-#     Sign a message using ECDSA
-#     Args:
-#         message: Message to sign
-#         private_key: A tuple of private key parameters
-#         curve: Curve parameters (a, b, p)
-#     Returns:
-#         A tuple of signature (r, s)
-#     """
-#     P, n, d, _ = private_key
-#     h = hash_message(message)
-#     k = random.randint(1, n - 1)
-
-#     kP = scalar_multiply(k, P, curve)
-#     while kP[0] % n == 0:
-#         k = random.randint(1, n - 1)
-#         kP = scalar_multiply(k, P, curve)
-#     r = kP[0] % n
-#     s = (multiplicative_inverse(n, k) * (h + r * d)) % n
-#     while s % n == 0:
-#         k = random.randint(1, n - 1)
-#         kP = scalar_multiply(k, P, curve)
-#         while kP[0] % n == 0:
-#             k = random.randint(1, n - 1)
-#             kP = scalar_multiply(k, P, curve)
-#         r = kP[0] % n
-#         s = (multiplicative_inverse(n, k) * (h + r * d)) % n
-#     return r, s
     
 def ecdsa_verify(message, signature, public_key):
     """
@@ -307,18 +316,22 @@ def ecdsa_verify(message, signature, public_key):
     v = add_u1P_u2Q[0] % n
     return (v, r, v == r)
 
-def count_points_on_curve_with_prime_modulo(p: int, a: int, b: int) -> int:
-    count = 0
-    if count is not None:
-        return count
-    
+def count_points_on_curve_with_prime_modulo(p, a, b):
+    """
+    Count the number of points on the curve with prime modulo p
+    Args:
+        p: Prime number
+        a, b: Curve parameters
+    Returns:
+        The number of points on the curve
+    """
     count = 0
     for x in range(p):
         y2 = (x**3 + a*x + b) % p
         if y2 == 0:
             count += 1
             continue
-        j = legendre_symbol(p, y2)
+        j = legendre_symbol(y2, p)
         if j == 1:
             count += 2
     count += 1
