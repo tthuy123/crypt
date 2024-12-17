@@ -323,3 +323,21 @@ def count_points_on_curve_with_prime_modulo(p: int, a: int, b: int) -> int:
             count += 2
     count += 1
     return count
+
+def find_order(P, curve):
+    """
+    Find the order of a point on the curve
+    Args:
+        P: Point to find the order of
+        curve: Curve parameters (a, b, p)
+    Returns:
+        The order of the point
+    """
+    if P is None:
+        return 1
+    order = 1
+    Q = P
+    while Q:
+        Q = point_add(Q, P, curve)
+        order += 1
+    return order
