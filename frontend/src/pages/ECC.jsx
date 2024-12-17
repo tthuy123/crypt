@@ -272,12 +272,19 @@ const ECC = () => {
                 Check if p is prime
               </Button>
               <Typography>
-                The number p is: <b>{isPPrime ? "Prime" : "Not Prime"}</b>
+                The number p is:{" "}
+                <b>
+                  {isPPrime == null ? "" : isPPrime ? "Prime" : "Not Prime"}
+                </b>
               </Typography>
               <Typography>
                 The number of the points on the elliptic curve is:{" "}
-                <b>{theNumberOfCurvePoints}</b> -{" "}
-                {isTheNumberOfCurvePointsPrime ? "Prime" : "Not Prime"}
+                <b>{theNumberOfCurvePoints}</b>{" "}
+                {isTheNumberOfCurvePointsPrime == null
+                  ? ""
+                  : isTheNumberOfCurvePointsPrime
+                  ? "- Prime"
+                  : "- Not Prime"}
               </Typography>
             </Stack>
 
