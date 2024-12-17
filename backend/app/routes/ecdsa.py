@@ -118,7 +118,11 @@ def verify():
 
         result = ecdsa_verify(message, signature, public_key)
 
-        return jsonify({"result": result})
+        return jsonify({"result": {
+            "v": result[0],
+            "r": result[1],
+            "valid": result[2]
+        }})
 
     except ValueError as ve:
         return jsonify({"error": f"Invalid input. Parameters must be integers: {str(ve)}"}), 400
