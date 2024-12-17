@@ -208,6 +208,21 @@ const ECC = () => {
     }
   };
 
+  const handleGenerateSenderPoint = async () => {
+    try {
+      const result = await ECCApi.getMessagePoint({
+        a,
+        b,
+        p,
+        message,
+      });
+      setSenderPointX(result.result.x);
+      setSenderPointY(result.result.y);
+    } catch (err) {
+      handleShowError("Cannot generate sender point", err.message);
+    }
+  };
+
   const [s, setS] = useState("947");
   return (
     <ThemeProvider theme={theme}>
