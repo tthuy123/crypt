@@ -147,13 +147,29 @@ const ECDSA = () => {
       });
 
       setIsGeneratorPointOnCurve(result.result);
-      setTimeout(() => setN("6557687"), 4000);
+      handleCalculateOrderOfGeneratorPoint();
       setError("");
     } catch (err) {
       handleShowError(
         "Cannot check if generator point is on curve",
         err.message
       );
+    }
+  };
+
+  const handleCalculateOrderOfGeneratorPoint = async () => {
+    try {
+      const result = await ECDSAApi.getOrderOfPoint({
+        pX: generatorPointX,
+        pY: generatorPointY,
+        a,
+        b,
+        p,
+      });
+      setN(result.result);
+      setError("");
+    } catch (err) {
+      handleShowError("Cannot calculate the order of the point", err.message);
     }
   };
 
@@ -176,6 +192,20 @@ const ECDSA = () => {
     }
   };
 
+  const handleHashMessage = async () => {
+    try {
+      const result = await ECDSAApi.hash_message({ message });
+      const reducedHash = result % int(n);
+      setHashedMessage(reducedHash);
+      console.log(reducedHash);
+      console.log(hashedMessage);
+      setError("");
+      console.log(reducedHash);
+    } catch (err) {
+      handleShowError("Cannot hash message", err.message);
+    }
+  };
+
   const handleCheckK = async () => {
     try {
       const result = await ECDSAApi.isKValid({
@@ -193,17 +223,6 @@ const ECDSA = () => {
       setError("");
     } catch (err) {
       handleShowError("Cannot check if k is valid", err.message);
-    }
-  };
-
-  const handleHashMessage = async () => {
-    try {
-      // const result = await ECDSAApi.hash_message({ message });
-      setHashedMessage("29099");
-      setError("");
-      console.log(hashedMessage);
-    } catch (err) {
-      handleShowError("Cannot hash message", err.message);
     }
   };
 
@@ -311,12 +330,21 @@ const ECDSA = () => {
                 Check if parameters are valid
               </Button>
               <Typography>
-                The number p is: <b>{isPPrime ? "Prime" : "Not Prime"}</b>
+                The number p is:{" "}
+                {p == null || isPPrime == null ? (
+                  ""
+                ) : (
+                  <b>{isPPrime ? "Prime" : "Not Prime"}</b>
+                )}
               </Typography>
               <Typography>
                 The number of the points on the elliptic curve is:{" "}
                 <b>{theNumberOfCurvePoints}</b> -{" "}
-                {isTheNumberOfCurvePointsPrime ? "Prime" : "Not Prime"}
+                {theNumberOfCurvePoints
+                  ? isTheNumberOfCurvePointsPrime
+                    ? "Prime"
+                    : "Not Prime"
+                  : ""}
               </Typography>
             </Stack>
 
