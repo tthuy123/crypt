@@ -305,7 +305,7 @@ def ecdsa_verify(message, signature, public_key):
     u2Q = scalar_multiply(u2, Q, curve)
     add_u1P_u2Q = point_add(u1P, u2Q, curve)
     v = add_u1P_u2Q[0] % n
-    return v == r
+    return (v, r, v == r)
 
 def count_points_on_curve_with_prime_modulo(p: int, a: int, b: int) -> int:
     count = 0
