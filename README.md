@@ -54,11 +54,3 @@ npm install
 npm run dev
 ```
 The frontend should now be running at http://localhost:5173.
-
-## Testing instructions
-- Open your browser and visit http://localhost:5173.
-- Interact with the cryptographic algorithm ElGamal using the user interface with route: http://localhost:5173/elgamal
-- Ensure both the backend (http://127.0.0.1:5000) and frontend (http://localhost:5173) are running for proper communication.
-  ![image](https://github.com/user-attachments/assets/592d6d94-9176-4dee-a796-00751f4ece92)
-  Note: This page is currently a demo version
-
