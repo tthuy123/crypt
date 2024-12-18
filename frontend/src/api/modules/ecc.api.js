@@ -77,6 +77,17 @@ const ECC = {
       }
     }
   },
+
+  async encodeMessage(data) {
+    try {
+      const response = await Client.post("ecc/encode-message", data);
+      return response;
+    } catch (error) {
+      if (error.response) {
+        return error.response;
+      }
+    }
+  },
 };
 
 export default ECC;

@@ -27,7 +27,7 @@ const TopBar = () => {
     ],
     ECC: [
       { label: "ECC Tool", link: "/ecc" },
-      { label: "ECC Signature", link: "/ecc-signature" },
+      { label: "ECC Signature", link: "/ecdsa" },
     ],
     "Related Algorithms": [
       { label: "Factorization", link: "/factors" },
