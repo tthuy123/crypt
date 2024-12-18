@@ -9,7 +9,7 @@ import { createTheme, ThemeProvider } from "@mui/material";
 import ECCApi from "../api/modules/ecc.api";
 import ECDSAApi from "../api/modules/ecdsa.api";
 import CommonApi from "../api/modules/common.api";
-import MathJax from "react-mathjax";
+import { MathJax, MathJaxContext } from "better-react-mathjax";
 
 const theme = createTheme({
   typography: {
@@ -21,23 +21,29 @@ const theme = createTheme({
 
 const ECDSA = () => {
   const kValidationSteps1 = `
-  kG = (x_1, y_1) \\\\ 
-  r = x_1
+  \\begin{align}
+  kG &= (x_1, y_1) \\\\
+  r &= x_1 mod n
+  \\end{align}
   `;
 
   const kValidationSteps2 = `
-  s = k^{-1} * (h + d * r) \\\\
-  \\text{where } h = H(m) \\\\
+  \\begin{align*}
+  &s = k^{-1} * (h + d * r) \\\\
+  &\\text{where } h = H(m) \\\\
+  \\end{align*}
   `;
 
   const verificationSteps1 = `
-  w = s^{-1} mod \\text{ } n\\\\
-  u_1 = h * w mod \\text{ } n \\\\
-  u_2 = r * w mod \\text{ } n \\\\
-  \\\\
-  u_1G + u_2Q = (x_0, y_0) \\\\
-  v = x_0 mod \\text{ } n
-  `;
+  \\begin{align*}
+  &w = s^{-1} \\mod n \\\\
+  &u_1 = h \\cdot w \\mod n \\\\
+  &u_2 = r \\cdot w \\mod n \\\\
+  &u_1G + u_2Q = (x_0, y_0) \\\\
+  &v = x_0 \\mod n
+  \\end{align*}
+`;
+
   const [error, setError] = useState("");
   const handleShowError = (message) => {
     setError(message);
@@ -561,17 +567,17 @@ const ECDSA = () => {
                 <Typography>
                   Step 1. Choose k in range [1, n - 1]and calculate:
                 </Typography>
-                <MathJax.Provider>
-                  <MathJax.Node formula={kValidationSteps1} />
-                </MathJax.Provider>
+                <MathJaxContext>
+                  <MathJax>{`\\[${kValidationSteps1}\\]`}</MathJax>
+                </MathJaxContext>
 
                 <Typography>Step 2.If r = 0, return to step 1.</Typography>
 
                 <Typography>Step 3. Calculate s</Typography>
 
-                <MathJax.Provider>
-                  <MathJax.Node formula={kValidationSteps2} />
-                </MathJax.Provider>
+                <MathJaxContext>
+                  <MathJax>{`\\[${kValidationSteps2}\\]`}</MathJax>
+                </MathJaxContext>
 
                 <Typography>Step 4. If s = 0, return to step 1.</Typography>
                 <TextField
@@ -619,9 +625,9 @@ const ECDSA = () => {
                 To verify a signature, the verifier performs the following:
               </Typography>
 
-              <MathJax.Provider>
-                <MathJax.Node formula={verificationSteps1} />
-              </MathJax.Provider>
+              <MathJaxContext>
+                <MathJax>{`\\[${verificationSteps1}\\]`}</MathJax>
+              </MathJaxContext>
 
               <Typography>
                 The signature is valid if and only if<b> r = v</b>.

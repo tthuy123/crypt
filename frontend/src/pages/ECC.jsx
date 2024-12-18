@@ -5,10 +5,9 @@ import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
-import MathJax from "react-mathjax";
 import { createTheme, ThemeProvider } from "@mui/material";
+import { MathJax, MathJaxContext } from "better-react-mathjax";
 import ECCApi from "../api/modules/ecc.api";
-import ECDSAApi from "../api/modules/ecdsa.api";
 import CommonApi from "../api/modules/common.api";
 
 const theme = createTheme({
@@ -21,8 +20,10 @@ const theme = createTheme({
 
 const ECC = () => {
   const encryptionSteps = `
-  M_1 = kG \\\\
-  M_2 = M + kP
+  \\begin{align*}
+  M_1 &= kG \\\\
+  M_2 &= M + kP
+  \\end{align*}
 `;
   const decryptionSteps = `
   M = M_2 - sM_1
@@ -487,9 +488,9 @@ const ECC = () => {
             </Typography>
             <Stack p={2} spacing={2}>
               <Typography>The cipher text is calculated as follows:</Typography>
-              <MathJax.Provider>
-                <MathJax.Node formula={encryptionSteps} />
-              </MathJax.Provider>
+              <MathJaxContext>
+                <MathJax>{`\\[${encryptionSteps}\\]`}</MathJax>
+              </MathJaxContext>
               <Button variant="contained" onClick={handleEncrypt}>
                 Encrypt
               </Button>
@@ -529,9 +530,9 @@ const ECC = () => {
                 The receiver can calculate the original message M using the
                 following formula:
               </Typography>
-              <MathJax.Provider>
-                <MathJax.Node formula={decryptionSteps} />
-              </MathJax.Provider>
+              <MathJaxContext>
+                <MathJax>{`\\[${decryptionSteps}\\]`}</MathJax>
+              </MathJaxContext>
               <Button variant="contained" onClick={handleDecrypt}>
                 Decrypt
               </Button>

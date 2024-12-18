@@ -11,8 +11,7 @@ import {
   Alert,
   Snackbar,
 } from "@mui/material";
-import MathJax from "react-mathjax"; // Import MathJax
-
+import { MathJax, MathJaxContext } from "better-react-mathjax";
 
 const ElGamalSignature = () => {
   const [p, setP] = useState("253832077567910969318490676867875139739"); // Prime number
@@ -100,7 +99,7 @@ const ElGamalSignature = () => {
       });
       setR(result.y1);
       setS(result.y2);
-      console.log(err)
+      console.log(err);
       setError("");
     } catch (err) {
       handleShowError("Error signing the message. Check the input values.");
@@ -127,15 +126,11 @@ const ElGamalSignature = () => {
 
   return (
     <Box sx={{ padding: 3 }}>
-      <Box 
-      display="flex" 
-      justifyContent="center" 
-      alignItems="center" 
-    >
-      <Typography variant="h3" gutterBottom fontWeight="bold">
-        ElGamal Digital Signature
-      </Typography>
-    </Box>
+      <Box display="flex" justifyContent="center" alignItems="center">
+        <Typography variant="h3" gutterBottom fontWeight="bold">
+          ElGamal Digital Signature
+        </Typography>
+      </Box>
 
       {/* Snackbar for errors */}
       <Snackbar
@@ -158,27 +153,25 @@ const ElGamalSignature = () => {
         <Typography variant="h4" gutterBottom fontWeight="bold">
           Step 1: Key Generation
         </Typography>
-        <Typography variant="h6" >
-          To generate the keys:
-        </Typography>
-        <Typography variant="body1" >
+        <Typography variant="h6">To generate the keys:</Typography>
+        <Typography variant="body1">
           1. Choose a large prime number p.
         </Typography>
-        <Typography variant="body1" >
+        <Typography variant="body1">
           2. Select a primitive root alpha modulo p.
         </Typography>
-        <Typography variant="body1" >
+        <Typography variant="body1">
           3. Choose a private key a in range (1, p - 1)
         </Typography>
-        <Typography variant="body1" >
+        <Typography variant="body1">
           4. Compute the public key with formula as follow:
         </Typography>
 
-        <MathJax.Provider>
+        <MathJaxContext>
           <Typography variant="h6">
-          <MathJax.Node formula={`\\beta = \\alpha^a \\mod p`} />
+            <MathJax>{`\\[\\beta = \\alpha^a \\mod p\\]`}</MathJax>
           </Typography>
-        </MathJax.Provider>
+        </MathJaxContext>
         <Stack spacing={2}>
           <TextField
             label="p (Prime Number)"
@@ -222,26 +215,20 @@ const ElGamalSignature = () => {
         <Typography variant="h4" gutterBottom fontWeight="bold">
           Step 2: Sign a Message
         </Typography>
+        <Typography variant="body1">To sign a message:</Typography>
         <Typography variant="body1">
-          To sign a message:
-        </Typography>
-        <Typography variant="body1" >
           1. Encode the message m into a number
         </Typography>
-        <Typography variant="body1">
-          2. Choose a random number k
-        </Typography>
+        <Typography variant="body1">2. Choose a random number k</Typography>
         <Typography variant="body1">
           4. Compute the signature component r, s as:
         </Typography>
-        
-        <MathJax.Provider>
+
+        <MathJaxContext>
           <Typography variant="h6">
-          <MathJax.Node formula={`r = \\alpha^k \\mod p`} />
-          <MathJax.Node formula={`s = (m' - a \\cdot r) \\cdot k^{-1} \\mod (p-1)`} />
+            <MathJax>{`\\[r = \\beta^k \\mod p\\] \\[s = k^{-1} \\cdot (m' - a \\cdot r) \\mod (p - 1)\\]`}</MathJax>
           </Typography>
-          
-        </MathJax.Provider>
+        </MathJaxContext>
         <Stack spacing={2}>
           <TextField
             label="Message to Sign"
@@ -283,26 +270,19 @@ const ElGamalSignature = () => {
         <Typography variant="h4" gutterBottom fontWeight="bold">
           Step 3: Verify the Signature
         </Typography>
+        <Typography variant="body1">To verify the signature:</Typography>
+        <Typography variant="body1">1. Compute V1</Typography>
+        <Typography variant="body1">2. Compute V2</Typography>
         <Typography variant="body1">
-          To verify the signature:
-        </Typography>
-        <Typography variant="body1" >
-          1. Compute V1
-        </Typography>
-        <Typography variant="body1">
-          2. Compute V2
-        </Typography>
-        <Typography variant="body1" >
-          3. If  V1 = V2 , the signature is valid. Otherwise, it is invalid.
+          3. If V1 = V2 , the signature is valid. Otherwise, it is invalid.
         </Typography>
 
-        <MathJax.Provider>
-          <Typography variant="h6" >
-          <MathJax.Node formula={`V_1 = \\beta^r \\cdot r^s \\mod p`} />
-          <MathJax.Node formula={`V_2 = \\alpha^{m'} \\mod p`} />
+        <MathJaxContext>
+          <Typography variant="h6">
+            <MathJax>{`\\[V_1 = \\alpha^{m'} \\cdot \\beta^{r} \\mod p\\]`}</MathJax>
+            <MathJax>{`\\[V_2 = r \\mod (p - 1)\\]`}</MathJax>
           </Typography>
-          
-        </MathJax.Provider>
+        </MathJaxContext>
         <Stack spacing={2} sx={{ marginTop: 2 }}>
           <Button variant="contained" onClick={handleVerifySignature}>
             Verify Signature
