@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.services.ecc import point_add, scalar_multiply, is_on_curve, ecc_encrypt, ecc_decrypt, ecc_generate_keypair, count_points_on_curve_with_prime_modulo, get_point_from_message
+from app.services.ecc import point_add, scalar_multiply, is_on_curve, ecc_encrypt, ecc_decrypt, ecc_generate_keypair, count_points_on_curve_with_prime_modulo, get_point_from_message, encrypt_single
 
 bp = Blueprint('ecc', __name__, url_prefix='/api/ecc')
 
@@ -203,5 +203,21 @@ def get_message_point():
             "x": str(result[0]),
             "y": str(result[1])
         }})
+    except ValueError:
+        return jsonify({"error": "Invalid input. Parameters must be integers"}), 400
+    
+@bp.route('/encode-message', methods=['POST'])
+def encode_message():
+    data = request.json
+    required_params = ['message']
+
+    for param in required_params:
+        if param not in data:
+            return jsonify({"error": f"Missing parameter: {param}"}), 400
+
+    try:
+        message = data['message']
+        result = encrypt_single(message)
+        return jsonify({"result": result})
     except ValueError:
         return jsonify({"error": "Invalid input. Parameters must be integers"}), 400

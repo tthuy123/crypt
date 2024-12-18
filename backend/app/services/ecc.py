@@ -354,3 +354,11 @@ def find_order(P, curve):
         Q = point_add(Q, P, curve)
         order += 1
     return order
+
+def encrypt_single(s):
+    s = s.upper()
+    n = len(s)
+    sum = 0
+    for i in range(n):
+        sum += (ord(s[i]) - 65) * (26 ** (n - i - 1))
+    return sum
