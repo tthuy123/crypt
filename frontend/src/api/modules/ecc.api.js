@@ -14,7 +14,7 @@ const ECC = {
 
   async isPointOnCurve(data) {
     try {
-      const response = await Client.post("ecc/point-on-curve", data); 
+      const response = await Client.post("ecc/point-on-curve", data);
       return response;
     } catch (error) {
       if (error.response) {
@@ -25,7 +25,7 @@ const ECC = {
 
   async pointMultiply(data) {
     try {
-      const response = await Client.post("ecc/point-multiply", data); 
+      const response = await Client.post("ecc/point-multiply", data);
       return response;
     } catch (error) {
       if (error.response) {
@@ -36,7 +36,7 @@ const ECC = {
 
   async encrypt(data) {
     try {
-      const response = await Client.post("ecc/encrypt", data); 
+      const response = await Client.post("ecc/encrypt", data);
       return response;
     } catch (error) {
       if (error.response) {
@@ -47,7 +47,7 @@ const ECC = {
 
   async decrypt(data) {
     try {
-      const response = await Client.post("ecc/decrypt", data); 
+      const response = await Client.post("ecc/decrypt", data);
       return response;
     } catch (error) {
       if (error.response) {
@@ -55,17 +55,39 @@ const ECC = {
       }
     }
   },
-  
+
   async curve_points(data) {
     try {
-      const response = await Client.post("ecc/count-point", data); 
+      const response = await Client.post("ecc/count-point", data);
       return response;
     } catch (error) {
       if (error.response) {
         return error.response;
       }
     }
-  }
+  },
+
+  async getMessagePoint(data) {
+    try {
+      const response = await Client.post("ecc/get-message-point", data);
+      return response;
+    } catch (error) {
+      if (error.response) {
+        return error.response;
+      }
+    }
+  },
+
+  async encodeMessage(data) {
+    try {
+      const response = await Client.post("ecc/encode-message", data);
+      return response;
+    } catch (error) {
+      if (error.response) {
+        return error.response;
+      }
+    }
+  },
 };
 
 export default ECC;

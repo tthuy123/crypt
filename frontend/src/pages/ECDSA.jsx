@@ -69,6 +69,7 @@ const ECDSA = () => {
   const [isGeneratorPointOnCurve, setIsGeneratorPointOnCurve] = useState(null);
   const [isKValid, setIsKValid] = useState(null);
 
+  const [v, setV] = useState("");
   const [isSignatureValid, setIsSignatureValid] = useState(null);
 
   const handleCheckIfNPrime = async () => {
@@ -147,13 +148,29 @@ const ECDSA = () => {
       });
 
       setIsGeneratorPointOnCurve(result.result);
-      setTimeout(() => setN("6557687"), 4000);
+      handleCalculateOrderOfGeneratorPoint();
       setError("");
     } catch (err) {
       handleShowError(
         "Cannot check if generator point is on curve",
         err.message
       );
+    }
+  };
+
+  const handleCalculateOrderOfGeneratorPoint = async () => {
+    try {
+      const result = await ECDSAApi.getOrderOfPoint({
+        pX: generatorPointX,
+        pY: generatorPointY,
+        a,
+        b,
+        p,
+      });
+      setN(result.result);
+      setError("");
+    } catch (err) {
+      handleShowError("Cannot calculate the order of the point", err.message);
     }
   };
 
@@ -176,6 +193,30 @@ const ECDSA = () => {
     }
   };
 
+  const handleHashMessage = async () => {
+    try {
+      const response = await ECDSAApi.hash_message({ message });
+      console.log("Hash result from API:", response);
+
+      const hashedMessage = response.hashed_message;
+      console.log("Hashed message:", hashedMessage);
+
+      const nInt = parseInt(n, 10);
+      console.log("Parsed n:", nInt);
+
+      if (isNaN(nInt)) {
+        throw new Error("Invalid value for n");
+      }
+
+      const reducedHash = BigInt(hashedMessage) % BigInt(nInt);
+      setHashedMessage(reducedHash.toString());
+      console.log("Reduced hash:", reducedHash.toString());
+      setError("");
+    } catch (err) {
+      handleShowError("Cannot hash message", err.message);
+    }
+  };
+
   const handleCheckK = async () => {
     try {
       const result = await ECDSAApi.isKValid({
@@ -193,17 +234,6 @@ const ECDSA = () => {
       setError("");
     } catch (err) {
       handleShowError("Cannot check if k is valid", err.message);
-    }
-  };
-
-  const handleHashMessage = async () => {
-    try {
-      // const result = await ECDSAApi.hash_message({ message });
-      setHashedMessage("29099");
-      setError("");
-      console.log(hashedMessage);
-    } catch (err) {
-      handleShowError("Cannot hash message", err.message);
     }
   };
 
@@ -246,7 +276,8 @@ const ECDSA = () => {
         n,
       });
 
-      setIsSignatureValid(result.result);
+      setIsSignatureValid(result.result.valid);
+      setV(result.result.v);
 
       setError("");
     } catch (err) {
@@ -311,12 +342,23 @@ const ECDSA = () => {
                 Check if parameters are valid
               </Button>
               <Typography>
-                The number p is: <b>{isPPrime ? "Prime" : "Not Prime"}</b>
+                The number p is:{" "}
+                {p == null || isPPrime == null ? (
+                  ""
+                ) : (
+                  <b>{isPPrime ? "Prime" : "Not Prime"}</b>
+                )}
               </Typography>
               <Typography>
                 The number of the points on the elliptic curve is:{" "}
-                <b>{theNumberOfCurvePoints}</b> -{" "}
-                {isTheNumberOfCurvePointsPrime ? "Prime" : "Not Prime"}
+                <b>
+                  {theNumberOfCurvePoints}{" "}
+                  {theNumberOfCurvePoints
+                    ? isTheNumberOfCurvePointsPrime
+                      ? "- Prime"
+                      : "- Not Prime"
+                    : ""}
+                </b>
               </Typography>
             </Stack>
 
@@ -502,14 +544,11 @@ const ECDSA = () => {
                 Hash the message!
               </Button>
 
-              {hashedMessage ? (
-                <Typography>
-                  The hashed message is: <br />
-                  <b>{hashedMessage}</b>
-                </Typography>
-              ) : (
-                ""
-              )}
+              <Typography>
+                The hashed message is: <br />
+                {hashedMessage != "" ? <b>{hashedMessage}</b> : ""}
+              </Typography>
+
               <Typography variant="h4" fontWeight="bold" gutterBottom>
                 Step 4.2: Generate a random number k.
               </Typography>
@@ -553,10 +592,6 @@ const ECDSA = () => {
                 </Typography>
               </Stack>
               <Stack p={2} spacing={2}>
-                <Typography>
-                  After generating a random number k, the signer calculates the
-                  signature (r, s) as follows:
-                </Typography>
                 <Button variant="contained" onClick={handleSign}>
                   Sign your message!
                 </Button>
@@ -594,6 +629,12 @@ const ECDSA = () => {
               <Button variant="contained" onClick={handleVerify}>
                 Verify the signature!
               </Button>
+              <Typography>
+                The value of v is: <b>{v}</b>
+              </Typography>
+              <Typography>
+                The value of r is: <b>{r}</b>
+              </Typography>
               <Typography>
                 The signature is valid:{" "}
                 <strong>

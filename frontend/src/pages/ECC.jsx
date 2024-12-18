@@ -8,6 +8,7 @@ import Box from "@mui/material/Box";
 import MathJax from "react-mathjax";
 import { createTheme, ThemeProvider } from "@mui/material";
 import ECCApi from "../api/modules/ecc.api";
+import ECDSAApi from "../api/modules/ecdsa.api";
 import CommonApi from "../api/modules/common.api";
 
 const theme = createTheme({
@@ -37,6 +38,7 @@ const ECC = () => {
   const [generatorPointX, setGeneratorPointX] = useState("2885735");
   const [generatorPointY, setGeneratorPointY] = useState("3280912");
   const [message, setMessage] = useState("");
+  const [encodedMessage, setEncodedMessage] = useState("");
 
   const [senderPointX, setSenderPointX] = useState("");
   const [senderPointY, setSenderPointY] = useState("");
@@ -50,30 +52,10 @@ const ECC = () => {
   const [decryptedPointX, setDecryptedPointX] = useState("");
   const [decryptedPointY, setDecryptedPointY] = useState("");
   const [isGeneratorPointOnCurve, setIsGeneratorPointOnCurve] = useState(null);
-  const [isSenderPointOnCurve, setIsSenderPointOnCurve] = useState(null);
   const [isPPrime, setIsPPrime] = useState(null);
   const [isTheNumberOfCurvePointsPrime, setIsTheNumberOfCurvePointsPrime] =
     useState(null);
   const [theNumberOfCurvePoints, setTheNumberOfCurvePoints] = useState(null);
-
-  const handleCalculateSenderPoint = async () => {
-    try {
-      const result = await ECCApi.pointMultiply({
-        a,
-        b,
-        p,
-        pX: generatorPointX,
-        pY: generatorPointY,
-        k: message.length,
-      });
-
-      setSenderPointX(result.result.x);
-      setSenderPointY(result.result.y);
-      setError("");
-    } catch (err) {
-      handleShowError("Cannot calculate sender point", err.message);
-    }
-  };
 
   const handleCheckIfPPrime = async () => {
     try {
@@ -162,6 +144,16 @@ const ECC = () => {
     }
   };
 
+  const handleEncodeMessage = async () => {
+    try {
+      const result = await ECCApi.encodeMessage({ message });
+      setEncodedMessage(result.result);
+      await handleGenerateSenderPoint();
+    } catch (err) {
+      handleShowError("Cannot encode the message", err.message);
+    }
+  };
+
   const handleEncrypt = async () => {
     try {
       const result = await ECCApi.encrypt({
@@ -205,6 +197,21 @@ const ECC = () => {
       console.log(decryptedPointX, decryptedPointY);
     } catch (err) {
       handleShowError("Cannot decrypt", err.message);
+    }
+  };
+
+  const handleGenerateSenderPoint = async () => {
+    try {
+      const result = await ECCApi.getMessagePoint({
+        a,
+        b,
+        p,
+        message: encodedMessage,
+      });
+      setSenderPointX(result.result.x);
+      setSenderPointY(result.result.y);
+    } catch (err) {
+      handleShowError("Cannot generate sender point", err.message);
     }
   };
 
@@ -272,12 +279,19 @@ const ECC = () => {
                 Check if p is prime
               </Button>
               <Typography>
-                The number p is: <b>{isPPrime ? "Prime" : "Not Prime"}</b>
+                The number p is:{" "}
+                <b>
+                  {isPPrime == null ? "" : isPPrime ? "Prime" : "Not Prime"}
+                </b>
               </Typography>
               <Typography>
                 The number of the points on the elliptic curve is:{" "}
-                <b>{theNumberOfCurvePoints}</b> -{" "}
-                {isTheNumberOfCurvePointsPrime ? "Prime" : "Not Prime"}
+                <b>{theNumberOfCurvePoints}</b>{" "}
+                {isTheNumberOfCurvePointsPrime == null
+                  ? ""
+                  : isTheNumberOfCurvePointsPrime
+                  ? "- Prime"
+                  : "- Not Prime"}
               </Typography>
             </Stack>
 
@@ -432,6 +446,9 @@ const ECC = () => {
                 type="text"
                 onChange={(e) => setMessage(e.target.value)}
               />
+
+              <Typography>The encoded message is: {encodedMessage}</Typography>
+
               <TextField
                 label="Sender Point x"
                 fullWidth
@@ -446,7 +463,7 @@ const ECC = () => {
                 value={senderPointY ?? ""}
                 onChange={(e) => setSenderPointY(e.target.value)}
               />
-              <Button variant="contained" onClick={handleCalculateSenderPoint}>
+              <Button variant="contained" onClick={handleEncodeMessage}>
                 Generate Message Point
               </Button>
             </Stack>

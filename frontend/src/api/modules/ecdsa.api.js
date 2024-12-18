@@ -23,6 +23,17 @@ const ECDSA = {
     }
   },
 
+  async getOrderOfPoint(data) {
+    try {
+      const response = await Client.post("ecdsa/find-order", data);
+      return response;
+    } catch (error) {
+      if (error.response) {
+        return error.response;
+      }
+    }
+  },
+
   async sign(data) {
     try {
       const response = await Client.post("ecdsa/sign", data);

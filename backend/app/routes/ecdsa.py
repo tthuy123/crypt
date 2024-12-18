@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.services.ecc import ecdsa_sign, ecdsa_verify, is_valid_k, hash_message
+from app.services.ecc import find_order, ecdsa_sign, ecdsa_verify, is_valid_k, hash_message
 
 bp = Blueprint('ecdsa', __name__, url_prefix='/api/ecdsa')
 
@@ -44,6 +44,27 @@ def hash():
         hashed_message = hash_message(message)
 
         return jsonify({"hashed_message": str(hashed_message)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@bp.route('/find-order', methods=['POST'])
+def find_order_route():
+    data = request.json
+    required_params = ['pX', 'pY', 'a', 'b', 'p']
+
+    for param in required_params:
+        if param not in data:
+            return jsonify({"error": f"Missing parameter: {param}"}), 400
+
+    try:
+        P = (int(data['pX']), int(data['pY']))
+        curve = (int(data['a']), int(data['b']), int(data['p']))
+        result = find_order(P, curve)
+
+        return jsonify({"result": result})
+    except ValueError:
+        return jsonify({"error": "Invalid input. Parameters must be integers"}), 400
+
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
@@ -97,7 +118,11 @@ def verify():
 
         result = ecdsa_verify(message, signature, public_key)
 
-        return jsonify({"result": result})
+        return jsonify({"result": {
+            "v": result[0],
+            "r": result[1],
+            "valid": result[2]
+        }})
 
     except ValueError as ve:
         return jsonify({"error": f"Invalid input. Parameters must be integers: {str(ve)}"}), 400

@@ -88,20 +88,7 @@ def is_quadratic_residue(a, p):
     return mod_pow(a, (p - 1) // 2, p) == 1
 
 def legendre_symbol(a, p):
-    """
-    Calculates the Legendre symbol (a/p).
-    Args:
-        a: An integer.
-        p: A prime number.
-    Returns:
-        1 if a is a quadratic residue modulo p, -1 if a is a non-residue modulo p, and 0 if a is divisible by p.
-    """
-    if a % p == 0:
-        return True
-    elif is_quadratic_residue(a, p):
-        1
-    else:
-        return -1
+    return pow(a, (p - 1) // 2, p)
 
 def jacobi_symbol(a, n):
     """
